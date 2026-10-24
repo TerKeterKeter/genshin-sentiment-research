@@ -4,7 +4,7 @@ Fondasi penelitian mahasiswa: “Bagaimana sentimen komentar awal terhadap pengu
 
 ## Batas penelitian
 
-Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari 2024–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
+Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
 
 Komentar utama berbahasa Inggris dalam `[publikasi, publikasi + 72 jam)`, tanpa balasan. Komentar diedit pada/selepas cutoff dikeluarkan secara konservatif; likes saat pengambilan bukan bobot historis. Bahasa otomatis bisa salah, khususnya teks pendek/emoji: tinjau sampel bahasa dan laporkan jumlah bahasa lain serta tidak teridentifikasi. Spam/teks identik ditandai untuk tinjauan, tidak otomatis dibuang.
 
@@ -22,7 +22,7 @@ python3 -m venv .venv
 .venv/bin/python -m genshin_research audit
 ```
 
-Pengujian inti dan audit juga berjalan dengan Python standar tanpa instalasi paket. Notebook memerlukan paket analisis. Versi dependensi dipatok langsung; belum merupakan lock lengkap beserta hash. Torch CPU cukup untuk inferensi; unduhan model baru dilakukan saat inferensi yang diizinkan.
+Pengujian inti dan audit juga berjalan dengan Python standar tanpa instalasi paket. Versi dependensi dipatok langsung; belum merupakan lock lengkap beserta hash. Torch CPU cukup untuk inferensi; unduhan model baru dilakukan saat inferensi yang diizinkan.
 
 ## Langkah bertahap
 
@@ -33,7 +33,7 @@ Pengujian inti dan audit juga berjalan dengan Python standar tanpa instalasi pak
 5. `collect --events data/pilot.csv --package data/pilot_run_01` mengambil seluruh pagination, menyaring waktu lokal, menduplikasi berdasarkan ID, dan menyimpan status lengkap/terputus. Tidak ada filter tanggal endpoint atau early-stop yang diasumsikan. Pengambilan terputus tidak boleh masuk analisis utama; buat paket baru untuk pengambilan ulang.
 6. Verifikasi model card `cardiffnlp/twitter-roberta-base-sentiment-latest`: simpan immutable commit SHA, lisensi aktual, serta pemetaan negative/neutral/positive di `config.json` dan catatan model. Model belum diunduh/diverifikasi. Kemudian `nlp --package data/pilot_run_01` melakukan normalisasi NFC/whitespace, identifikasi bahasa, dan inferensi lokal CPU. Negasi/emoji dipertahankan; pemotongan input panjang ditandai. Domain Twitter berbeda dari YouTube.
 7. `annotate --package data/pilot_run_01 --events data/pilot.csv` menghasilkan sekitar 200 komentar dengan sampling acak berstrata event × interval 24 jam (seed 42, alokasi seimbang hingga kapasitas strata). Isi label manual sesuai [panduan](docs/annotation.md), lalu `evaluate --package data/pilot_run_01`. Jangan mengisi gold dengan output model.
-8. Impor revenue manual dari satu seri sumber ke template; jangan mengarang nilai. `analyze --package data/pilot_run_01 --events data/pilot.csv --revenue data/revenue.csv` menulis agregat, pasangan, scatter berlabel bulan dan Spearman. Izin penggabungan eksternal terpisah wajib. Notebook menunjukkan eksplorasi offline sintetis dan langkah inspeksi.
+8. Impor revenue manual dari satu seri sumber ke template; jangan mengarang nilai. `analyze --package data/pilot_run_01 --events data/pilot.csv --revenue data/revenue.csv` menulis agregat, pasangan, scatter berlabel bulan dan Spearman. Izin penggabungan eksternal terpisah wajib. Scatter plot dibuat langsung oleh CLI; notebook tidak diperlukan.
 
 Semua subperintah memakai awalan `python -m genshin_research`; jalankan `--help` untuk argumen. Opsi global `--config` dan `--permissions` diletakkan sebelum subperintah.
 
@@ -54,3 +54,5 @@ Kesiapan forecasting tetap ditunda: nilai jumlah bulan independen, pola missingn
 Aktifkan virtual environment, lalu jalankan `bash scripts/check.sh`. GitHub Actions menjalankan tes sintetis dan audit tanpa API key; dependensi model besar tidak diunduh di CI. Hasil CI baru diketahui setelah workflow berjalan di GitHub.
 
 Simpan API key sebagai environment variable privat. `.env`, variasi `.env.*` (kecuali contoh kosong), `config.local.json`, `permissions.local.json`, data dan output lokal diabaikan Git. Jangan menulis key di konfigurasi yang dilacak. Untuk konfigurasi izin lokal gunakan `python -m genshin_research --config config.local.json --permissions permissions.local.json SUBCOMMAND`.
+
+Periode kandidat adalah 1 Januari 2026 hingga sebelum 1 Oktober 2026 (UTC). Unit bulan mengikuti akhir jendela 72 jam: event akhir September dapat masuk agregat Oktober dan membutuhkan revenue November. Sembilan bulan kandidat tidak menjamin sembilan pasangan; jumlah observasi bulanan kemungkinan kecil, sehingga hasil tetap eksploratif dan forecasting ditunda.
