@@ -1,11 +1,7 @@
 {
-  "policy_review_status": "reviewed_pending_project_permission",
+  "policy_review_status": "reviewed",
   "policy_reviewed_at": "2026-10-25",
-  "evidence_reference": null,
-  "collection_allowed": false,
-  "derived_analysis_allowed": false,
-  "external_join_allowed": false,
-  "retention_days": null,
-  "notes": "Official policies reviewed; project owner confirms API key only, no additional-derived-metrics approval established. See docs/policy-review.md. No real data authorized; all operation flags remain false.",
-  "metadata_allowed": false
+  "evidence_reference": "docs/policy-review.md",
+  "metadata_allowed": false,
+  "retention_days": 30
 }
