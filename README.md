@@ -66,3 +66,17 @@ Siapkan berkas kerja tanpa API dengan `python -m genshin_research prepare-audit`
 ## Verifikasi kandidat melalui API
 
 Ikuti [panduan metadata](docs/metadata-audit.md). Scope `metadata_allowed` hanya membuka pembacaan metadata; pengumpulan komentar dan analisis tetap dinonaktifkan. Gunakan `metadata --package data/metadata_candidate_001 -- -2um93gmb3A` dengan opsi global konfigurasi privat sesuai panduan. Bukti API disimpan dalam paket lokal dengan batas retensi, bukan Git.
+
+## Membaca dan merapikan kode
+
+`__main__.py` adalah entry point. `cli.py` mendefinisikan argumen, sedangkan `commands.py` menghubungkan setiap perintah ke modul penelitian. Logika audit, collector, NLP dan agregasi tetap berada di modul masing-masing. `core.py` menyediakan operasi CSV/JSON dan waktu; `management.py` menangani paket lokal dan purge. Penentuan drip marketing tetap dilakukan manual melalui registry.
+
+Untuk pemeriksaan format opsional:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m ruff check genshin_research
+python -m ruff format --check genshin_research
+```
+
+Perapian kode dapat dilakukan sebelum melengkapi registry. Status `included` tetap memerlukan bukti pemeriksaan manual sebelum pengumpulan komentar.
