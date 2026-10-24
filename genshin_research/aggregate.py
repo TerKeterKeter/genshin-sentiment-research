@@ -32,6 +32,8 @@ def aggregate(events, comments, hours=72):
 
 
 def pair_revenue(monthly, revenue):
+    from .preparation import validate_revenue_rows
+    validate_revenue_rows(revenue)
     scopes, sources, lookup = set(), set(), {}
     for row in revenue:
         required = ['month', 'platform_scope', 'region_scope', 'cn_android_included', 'source_url', 'retrieved_at']

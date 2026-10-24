@@ -10,6 +10,7 @@ from .collector import YouTube, collect
 from .nlp import preprocess, infer, annotation_sample, evaluate
 from .aggregate import aggregate, pair_revenue, explore
 from .management import purge_package, refresh_metadata
+from .preparation import prepare_audit, revenue_report
 
 
 def main():
@@ -18,6 +19,8 @@ def main():
     parser.add_argument('--permissions', default='permissions.json')
     sub = parser.add_subparsers(dest='command', required=True)
     p = sub.add_parser('audit'); p.add_argument('--events', default='templates/events.csv'); p.add_argument('--revenue', default='templates/revenue.csv'); p.add_argument('--coverage', default='templates/discovery_coverage.csv'); p.add_argument('--as-of', default=datetime.now(timezone.utc).date().isoformat())
+    p = sub.add_parser('prepare-audit'); p.add_argument('--destination', default='data')
+    p = sub.add_parser('revenue-check'); p.add_argument('--revenue', default='data/revenue.csv')
     p = sub.add_parser('metadata'); p.add_argument('video_id'); p.add_argument('--refresh', action='store_true')
     p = sub.add_parser('collect'); p.add_argument('--events', required=True); p.add_argument('--package', required=True)
     p = sub.add_parser('nlp'); p.add_argument('--package', required=True)
@@ -29,6 +32,10 @@ def main():
     args = parser.parse_args()
     config = json.loads(Path(args.config).read_text())
     permissions = json.loads(Path(args.permissions).read_text())
+    if args.command == 'prepare-audit':
+        print(json.dumps(prepare_audit(args.destination), indent=2)); return
+    if args.command == 'revenue-check':
+        print(json.dumps(revenue_report(read_csv(args.revenue)), indent=2)); return
     if args.command == 'audit':
         events, revenue = read_csv(args.events), read_csv(args.revenue)
         report = audit(events, revenue, config)

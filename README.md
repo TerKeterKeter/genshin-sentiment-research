@@ -60,3 +60,5 @@ Periode kandidat adalah 1 Januari 2026 hingga sebelum 1 Oktober 2026 (UTC). Unit
 ## Fase berikutnya: audit kelayakan
 
 Ikuti [langkah audit lokal](docs/feasibility-workflow.md) dan [hasil tinjauan kebijakan](docs/policy-review.md). Template `templates/discovery_coverage.csv` mencatat penelusuran per bulan; `audit --as-of 2026-10-25` menampilkan cakupan kalender dan status bulan revenue tanpa API. Status izin belum diaktifkan.
+
+Siapkan berkas kerja tanpa API dengan `python -m genshin_research prepare-audit`, kemudian isi CSV lokal di `data/`. Periksa impor dengan `python -m genshin_research revenue-check`. Perintah ini tidak mengunduh data atau mengubah mode dry-run.

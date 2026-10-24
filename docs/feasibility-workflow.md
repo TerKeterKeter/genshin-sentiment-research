@@ -2,16 +2,14 @@
 
 ## Berkas kerja lokal
 
-Salin template ke area yang diabaikan Git; perintah berikut menolak menimpa berkas yang sudah ada:
+Jalankan perintah berikut dari root repositori:
 
-```python
-from pathlib import Path
-for filename in ['events.csv', 'discovery_coverage.csv', 'revenue.csv']:
-    destination = Path('data') / filename
-    destination.parent.mkdir(exist_ok=True)
-    with destination.open('x', encoding='utf-8', newline='') as stream:
-        stream.write((Path('templates') / filename).read_text(encoding='utf-8'))
+```bash
+python -m genshin_research prepare-audit
+python -m genshin_research revenue-check --revenue data/revenue.csv
 ```
+
+`prepare-audit` membuat tiga CSV lokal di `data/`; pemanggilan ulang mempertahankan semua berkas yang sudah ada. `revenue-check` memeriksa format dan konsistensi seri, bukan membuktikan kebenaran angka/hak penggunaan sumber. Status `empty` berarti belum ada impor. Revenue nol berbeda dari kolom kosong. Gunakan `true`, `false`, atau `unknown` pada cn_android_included. Multiplier positif hanya boleh diisi jika CN Android disertakan; kosongkan bila tidak berlaku dan jelaskan di revision_notes. retrieved_at menerima tanggal ISO atau timestamp dengan timezone.
 
 Registry berisi satu tautan kandidat, bukan hasil terverifikasi. Jangan menetapkan tanggal publikasinya sebelum API mengonfirmasi. Simpan hasil penelusuran per bulan Januari–September 2026 di discovery_coverage.csv: not_started, partial, completed. `completed` membutuhkan waktu pemeriksaan dan catatan bukti/strategi pencarian yang memungkinkan audit ulang. Tidak ditemukannya event dalam registry kosong bukan bukti tidak ada event.
 
