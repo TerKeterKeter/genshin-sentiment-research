@@ -24,3 +24,7 @@ Paket lokal menggabungkan teks, metadata, anotasi dan agregat. Karena belum memi
 ## Keterbatasan akses lain
 
 https://revenue.ennead.cc/revenue masih ditolak proxy HTTP 403. Belum ada angka atau cakupan seri yang diverifikasi. Domain tersebut perlu diizinkan di pengaturan jaringan environment, atau sumber dapat diperiksa manual oleh peneliti dan diimpor ke CSV sesuai template. Jangan mengubah sumber/cakupan secara diam-diam.
+
+## Catatan klarifikasi dari peneliti
+
+Peneliti menyampaikan jawaban Google Gemini yang menyatakan penelitian akademik internal nonkomersial secara umum tidak memerlukan persetujuan formal. Jawaban tersebut belum menyertakan sumber kebijakan resmi atau konfirmasi dari tim YouTube API. Kepemilikan produk Gemini oleh Google tidak menjadikan jawabannya persetujuan untuk proyek API ini. Pada dua halaman resmi yang diperiksa, belum ditemukan pengecualian eksplisit tersebut. Klaim ini dicatat sebagai belum terverifikasi, bukan sebagai bukti penerimaan amendment atau pengecualian proyek. Persiapan kode, fixture sintetis dan audit offline tetap dapat dilakukan; status izin data nyata tidak diubah atas dasar jawaban chatbot saja.
