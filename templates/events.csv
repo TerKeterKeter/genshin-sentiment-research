@@ -1,0 +1,2 @@
+event_id,character_name,announcement_source_url,initial_announcement_at_utc,video_id,video_url,channel_id,video_published_at_utc,content_type,inclusion_status,exclusion_reason,verification_notes
+candidate_001,,,,-2um93gmb3A,https://youtube.com/shorts/-2um93gmb3A,,,,pending,,"Candidate only; API metadata, official channel identity, Shorts format and initial announcement require verification."
