@@ -28,3 +28,7 @@ https://revenue.ennead.cc/revenue masih ditolak proxy HTTP 403. Belum ada angka 
 ## Catatan klarifikasi dari peneliti
 
 Peneliti menyampaikan jawaban Google Gemini yang menyatakan penelitian akademik internal nonkomersial secara umum tidak memerlukan persetujuan formal. Jawaban tersebut belum menyertakan sumber kebijakan resmi atau konfirmasi dari tim YouTube API. Kepemilikan produk Gemini oleh Google tidak menjadikan jawabannya persetujuan untuk proyek API ini. Pada dua halaman resmi yang diperiksa, belum ditemukan pengecualian eksplisit tersebut. Klaim ini dicatat sebagai belum terverifikasi, bukan sebagai bukti penerimaan amendment atau pengecualian proyek. Persiapan kode, fixture sintetis dan audit offline tetap dapat dilakukan; status izin data nyata tidak diubah atas dasar jawaban chatbot saja.
+
+## Pemisahan scope metadata
+
+Pembacaan metadata publik melalui videos.list dan channels.list untuk audit kandidat mempunyai scope lokal `metadata_allowed` tersendiri. Ini tidak memerlukan klaim persetujuan additional derived metrics dan tidak membuka pengumpulan komentar, inferensi sentimen atau penggabungan revenue. Konfigurasi default tetap offline; aktivasi terbatas didokumentasikan di docs/metadata-audit.md.

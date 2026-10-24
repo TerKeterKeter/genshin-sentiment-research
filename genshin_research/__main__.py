@@ -11,6 +11,7 @@ from .nlp import preprocess, infer, annotation_sample, evaluate
 from .aggregate import aggregate, pair_revenue, explore
 from .management import purge_package, refresh_metadata
 from .preparation import prepare_audit, revenue_report
+from .metadata_audit import verify_metadata, save_metadata_package
 
 
 def main():
@@ -21,7 +22,7 @@ def main():
     p = sub.add_parser('audit'); p.add_argument('--events', default='templates/events.csv'); p.add_argument('--revenue', default='templates/revenue.csv'); p.add_argument('--coverage', default='templates/discovery_coverage.csv'); p.add_argument('--as-of', default=datetime.now(timezone.utc).date().isoformat())
     p = sub.add_parser('prepare-audit'); p.add_argument('--destination', default='data')
     p = sub.add_parser('revenue-check'); p.add_argument('--revenue', default='data/revenue.csv')
-    p = sub.add_parser('metadata'); p.add_argument('video_id'); p.add_argument('--refresh', action='store_true')
+    p = sub.add_parser('metadata'); p.add_argument('video_id'); p.add_argument('--refresh', action='store_true'); p.add_argument('--package')
     p = sub.add_parser('collect'); p.add_argument('--events', required=True); p.add_argument('--package', required=True)
     p = sub.add_parser('nlp'); p.add_argument('--package', required=True)
     p = sub.add_parser('annotate'); p.add_argument('--package', required=True); p.add_argument('--events', required=True)
@@ -50,11 +51,12 @@ def main():
     if args.command == 'purge':
         print({'purged': purge_package(args.package, force=args.force)}); return
     if args.command == 'metadata':
-        authorize(config, permissions, 'collection_allowed')
+        authorize(config, permissions, 'metadata_allowed')
         api = YouTube(os.environ.get('YOUTUBE_API_KEY'))
-        metadata = refresh_metadata(api, args.video_id) if args.refresh else api.metadata(args.video_id)
-        metadata['official_handle_channel_id'] = api.official_channel_id()
-        metadata['matches_official_channel'] = metadata['channel_id'] == metadata['official_handle_channel_id']
+        # Every metadata call retrieves fresh video and official-channel information.
+        metadata = verify_metadata(api, args.video_id)
+        if args.package:
+            save_metadata_package(metadata, args.package, permissions['retention_days'])
         print(json.dumps(metadata, indent=2)); return
     authorize(config, permissions, 'collection_allowed' if args.command == 'collect' else 'derived_analysis_allowed')
     package = Path(args.package).resolve()
