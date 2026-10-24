@@ -4,7 +4,7 @@ Fondasi penelitian mahasiswa: “Bagaimana sentimen komentar awal terhadap pengu
 
 ## Batas penelitian
 
-Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari 2024–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
+Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari 2026–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
 
 Komentar utama berbahasa Inggris dalam `[publikasi, publikasi + 72 jam)`, tanpa balasan. Komentar diedit pada/selepas cutoff dikeluarkan secara konservatif; likes saat pengambilan bukan bobot historis. Bahasa otomatis bisa salah, khususnya teks pendek/emoji: tinjau sampel bahasa dan laporkan jumlah bahasa lain serta tidak teridentifikasi. Spam/teks identik ditandai untuk tinjauan, tidak otomatis dibuang.
 
