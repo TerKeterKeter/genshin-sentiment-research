@@ -6,9 +6,9 @@ Sumber resmi yang harus dibaca ulang dan dicatat tanggal/versinya:
 - https://developers.google.com/youtube/terms/developer-policies
 - https://developers.google.com/youtube/terms/derived-metrics-policy
 
-Percobaan akses sesi ini: proxy menolak keduanya dengan HTTP 403. **Belum ada kesimpulan izin dari dokumen terbaru.** Jangan menganggap API key, akses teknis atau status akademik mengizinkan analisis sentimen, penyimpanan label/embedding/metrik turunan atau penggabungan revenue eksternal. Minta penilaian penanggung jawab proyek dan dokumentasikan bukti izin/pengecualian yang berlaku; boolean aplikasi bukan pemberian izin oleh YouTube.
+Kedua halaman berhasil dibaca pada fase audit berikutnya; lihat [catatan pemeriksaan](policy-review.md). Pemilik proyek baru memiliki API key; persetujuan additional derived metrics belum ditetapkan. Jangan menganggap API key, akses teknis atau status akademik mengizinkan analisis sentimen, penyimpanan label/embedding/metrik turunan atau penggabungan revenue eksternal. Minta penilaian penanggung jawab proyek dan dokumentasikan bukti izin/pengecualian yang berlaku; boolean aplikasi bukan pemberian izin oleh YouTube.
 
-`permissions.json` memisahkan collection_allowed, derived_analysis_allowed, external_join_allowed. Isi policy_review_status=documented, policy_reviewed_at, evidence_reference dan retention_days hanya setelah kewajiban spesifik proyek dipastikan. Tidak ada angka retensi universal yang diasumsikan di kode. Catat dasar hukum/kebijakan, cakupan data, pihak yang menyetujui, tujuan, refresh, deletion dan pembatasan ekspor. Jangan mengaktifkan operasi jika ada penggunaan yang masih belum diizinkan.
+`permissions.json` memisahkan collection_allowed, derived_analysis_allowed, external_join_allowed. Isi policy_review_status=documented, policy_reviewed_at, evidence_reference dan retention_days hanya setelah kewajiban spesifik proyek dipastikan. Untuk paket campuran yang masih berisi teks, kode menerima retensi 1–30 hari; pengecualian penyimpanan turunan lebih lama tidak diimplementasikan. Catat dasar hukum/kebijakan, cakupan data, pihak yang menyetujui, tujuan, refresh, deletion dan pembatasan ekspor. Jangan mengaktifkan operasi jika ada penggunaan yang masih belum diizinkan.
 
 ## Siklus hidup
 

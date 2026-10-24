@@ -1,0 +1,114 @@
+{
+  "candidate_events": 1,
+  "included_verified_events": 0,
+  "events_by_window_end_month": {},
+  "events_by_publication_month": {},
+  "events_by_publication_year": {},
+  "without_suitable_short": [],
+  "pending_events": [
+    "candidate_001"
+  ],
+  "revenue_months_available": [],
+  "potential_paired_months": [],
+  "potential_pair_count": 0,
+  "issues": [],
+  "feasibility": "not_established; requires complete registry, permission, collection and validated revenue",
+  "calendar_coverage": {
+    "as_of": "2026-10-25",
+    "months": [
+      {
+        "window_end_month": "2026-01",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-02",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-02",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-03",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-03",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-04",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-04",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-05",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-05",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-06",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-06",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-07",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-07",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-08",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-08",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-09",
+        "revenue_status": "missing_or_not_imported",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-09",
+        "verified_event_count": 0,
+        "publication_discovery_status": "not_started",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-10",
+        "revenue_status": "month_not_complete",
+        "potential_pair": false
+      },
+      {
+        "window_end_month": "2026-10",
+        "verified_event_count": 0,
+        "publication_discovery_status": "outside_publication_period",
+        "window_month_status": "no_verified_events_yet",
+        "revenue_month": "2026-11",
+        "revenue_status": "month_not_complete",
+        "potential_pair": false
+      }
+    ],
+    "potential_pair_count": 0,
+    "actual_pair_count": null,
+    "note": "Discovery tracks publication months; window-end months may include prior-month events. No verified events yet does not mean no events exist. Actual pairs require eligible comments and evaluated sentiment; not computed during registry audit."
+  }
+}

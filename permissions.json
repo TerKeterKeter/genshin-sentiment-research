@@ -1,10 +1,10 @@
 {
-  "policy_review_status": "pending_network_access",
-  "policy_reviewed_at": null,
+  "policy_review_status": "reviewed_pending_project_permission",
+  "policy_reviewed_at": "2026-10-25",
   "evidence_reference": null,
   "collection_allowed": false,
   "derived_analysis_allowed": false,
   "external_join_allowed": false,
   "retention_days": null,
-  "notes": "No real data authorized. Record project-specific permission and applicable refresh/deletion obligations before enabling."
+  "notes": "Official policies reviewed; project owner confirms API key only, no additional-derived-metrics approval established. See docs/policy-review.md. No real data authorized; all operation flags remain false."
 }

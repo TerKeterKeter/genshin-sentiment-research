@@ -34,8 +34,9 @@ def authorize(config, permissions, operation):
             or not permissions.get('policy_reviewed_at')
             or not permissions.get(operation)
             or not isinstance(permissions.get('retention_days'), int)
-            or permissions['retention_days'] <= 0):
-        raise PermissionError('Document project-specific permission, retention and policy review first')
+            or isinstance(permissions['retention_days'], bool)
+            or not 0 < permissions['retention_days'] <= 30):
+        raise PermissionError('Document project-specific permission and policy review; mixed text packages require retention of 1-30 days')
 
 
 def eligibility(published, updated, video_published, hours=72):

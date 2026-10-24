@@ -63,3 +63,60 @@ def choose_pilot(events, n=8):
         raise ValueError('At least six verified eligible events required')
     n = min(max(n, 6), 10, len(valid))
     return [valid[round(i * (len(valid)-1)/(n-1))] for i in range(n)]
+
+
+def monthly_coverage(events, revenue, config, coverage, as_of):
+    """Calendar audit, including unknown/no-event and unfinished revenue months."""
+    from datetime import date
+    from .aggregate import pair_revenue
+
+    day = date.fromisoformat(as_of)
+    # Reuse source/scope/value validation without manufacturing observations.
+    pair_revenue([], revenue)
+    report = audit(events, revenue, config)
+    if report['issues']:
+        raise ValueError(report['issues'])
+    discovery = {}
+    for row in coverage:
+        month = row['month']
+        if month in discovery:
+            raise ValueError('Duplicate discovery month')
+        if row['discovery_status'] not in {'not_started', 'partial', 'completed'}:
+            raise ValueError('Invalid discovery status')
+        if row['discovery_status'] == 'completed' and not (row['checked_at_utc'] and row['evidence_notes']):
+            raise ValueError('Completed discovery needs timestamp and evidence notes')
+        if row.get('checked_at_utc'):
+            utc(row['checked_at_utc'])
+        discovery[month] = row['discovery_status']
+    def next_month(month):
+        year, number = map(int, month.split('-'))
+        return f'{year + (number == 12):04d}-{number % 12 + 1:02d}'
+    start = config['candidate_start'][:7]
+    end = config['candidate_end_exclusive']
+    last_publication = (utc(end + 'T00:00:00Z') - timedelta(microseconds=1)).strftime('%Y-%m')
+    last_window = (utc(end + 'T00:00:00Z') + timedelta(hours=config['window_hours']) - timedelta(microseconds=1)).strftime('%Y-%m')
+    available = {r['month'] for r in revenue if r['revenue_usd'] != ''}
+    result = []
+    month = start
+    while month <= last_window:
+        revenue_month = next_month(month)
+        complete = date.fromisoformat(next_month(revenue_month) + '-01') <= day
+        n = report['events_by_window_end_month'].get(month, 0)
+        discovery_status = discovery.get(month, 'not_started') if month <= last_publication else 'outside_publication_period'
+        if revenue_month in available:
+            revenue_status = 'available' if complete else 'provided_but_month_incomplete'
+        else:
+            revenue_status = 'missing_or_not_imported' if complete else 'month_not_complete'
+        # Window-end month can also receive events published in the prior month.
+        result.append({'window_end_month': month, 'verified_event_count': n,
+                       'publication_discovery_status': discovery_status,
+                       'window_month_status': 'verified_events_present' if n else 'no_verified_events_yet',
+                       'revenue_month': revenue_month, 'revenue_status': revenue_status,
+                       'potential_pair': bool(n and revenue_status == 'available')})
+        month = next_month(month)
+    return {'as_of': as_of, 'months': result,
+            'potential_pair_count': sum(r['potential_pair'] for r in result),
+            'actual_pair_count': None,
+            'note': 'Discovery tracks publication months; window-end months may include prior-month events. '
+                    'No verified events yet does not mean no events exist. Actual pairs require eligible '
+                    'comments and evaluated sentiment; not computed during registry audit.'}

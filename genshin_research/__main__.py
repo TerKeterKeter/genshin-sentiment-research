@@ -5,7 +5,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from collections import Counter
 from .core import read_csv, write_csv, authorize, utc
-from .audit import audit, choose_pilot
+from .audit import audit, choose_pilot, monthly_coverage
 from .collector import YouTube, collect
 from .nlp import preprocess, infer, annotation_sample, evaluate
 from .aggregate import aggregate, pair_revenue, explore
@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--config', default='config.json')
     parser.add_argument('--permissions', default='permissions.json')
     sub = parser.add_subparsers(dest='command', required=True)
-    p = sub.add_parser('audit'); p.add_argument('--events', default='templates/events.csv'); p.add_argument('--revenue', default='templates/revenue.csv')
+    p = sub.add_parser('audit'); p.add_argument('--events', default='templates/events.csv'); p.add_argument('--revenue', default='templates/revenue.csv'); p.add_argument('--coverage', default='templates/discovery_coverage.csv'); p.add_argument('--as-of', default=datetime.now(timezone.utc).date().isoformat())
     p = sub.add_parser('metadata'); p.add_argument('video_id'); p.add_argument('--refresh', action='store_true')
     p = sub.add_parser('collect'); p.add_argument('--events', required=True); p.add_argument('--package', required=True)
     p = sub.add_parser('nlp'); p.add_argument('--package', required=True)
@@ -30,7 +30,10 @@ def main():
     config = json.loads(Path(args.config).read_text())
     permissions = json.loads(Path(args.permissions).read_text())
     if args.command == 'audit':
-        print(json.dumps(audit(read_csv(args.events), read_csv(args.revenue), config), indent=2)); return
+        events, revenue = read_csv(args.events), read_csv(args.revenue)
+        report = audit(events, revenue, config)
+        report['calendar_coverage'] = monthly_coverage(events, revenue, config, read_csv(args.coverage), args.as_of)
+        print(json.dumps(report, indent=2)); return
     if args.command == 'pilot':
         events = read_csv(args.events)
         report = audit(events, [], config)

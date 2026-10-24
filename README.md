@@ -41,7 +41,7 @@ Semua subperintah memakai awalan `python -m genshin_research`; jalankan `--help`
 
 Satu kandidat terdaftar: https://youtube.com/shorts/-2um93gmb3A. **Nol event terverifikasi**, bukan bukti bahwa tidak ada event yang memenuhi kriteria. Judul, karakter, channel ID, timestamp dan distribusi bulan/tahun belum dapat ditetapkan. Belum ada revenue, pasangan aktual **0**. Event tanpa Short belum diaudit. Dataset belum dapat dinyatakan layak. Audit tidak mencari seluruh katalog kanal otomatis; registry harus dilengkapi manual sebelum menyimpulkan cakupan.
 
-API key belum tersedia. Akses dua halaman kebijakan resmi pada sesi setup ditolak proxy HTTP 403; isi kebijakan terbaru belum diverifikasi. Tidak ada pengumpulan komentar/model/revenue nyata atau hasil sentimen empiris dalam repositori.
+API key belum tersedia. Kedua kebijakan resmi berhasil dibaca pada fase audit lanjutan; persetujuan additional derived metrics proyek belum tersedia (baru API key). Lihat docs/policy-review.md. Tidak ada pengumpulan komentar/model/revenue nyata atau hasil sentimen empiris dalam repositori.
 
 ## Keterbatasan
 
@@ -56,3 +56,7 @@ Aktifkan virtual environment, lalu jalankan `bash scripts/check.sh`. GitHub Acti
 Simpan API key sebagai environment variable privat. `.env`, variasi `.env.*` (kecuali contoh kosong), `config.local.json`, `permissions.local.json`, data dan output lokal diabaikan Git. Jangan menulis key di konfigurasi yang dilacak. Untuk konfigurasi izin lokal gunakan `python -m genshin_research --config config.local.json --permissions permissions.local.json SUBCOMMAND`.
 
 Periode kandidat adalah 1 Januari 2026 hingga sebelum 1 Oktober 2026 (UTC). Unit bulan mengikuti akhir jendela 72 jam: event akhir September dapat masuk agregat Oktober dan membutuhkan revenue November. Sembilan bulan kandidat tidak menjamin sembilan pasangan; jumlah observasi bulanan kemungkinan kecil, sehingga hasil tetap eksploratif dan forecasting ditunda.
+
+## Fase berikutnya: audit kelayakan
+
+Ikuti [langkah audit lokal](docs/feasibility-workflow.md) dan [hasil tinjauan kebijakan](docs/policy-review.md). Template `templates/discovery_coverage.csv` mencatat penelusuran per bulan; `audit --as-of 2026-10-25` menampilkan cakupan kalender dan status bulan revenue tanpa API. Status izin belum diaktifkan.
