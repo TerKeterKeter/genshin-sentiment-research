@@ -1,76 +1,53 @@
 # Genshin sentiment research
 
-Tahap aktif: menyiapkan dan memverifikasi manual kandidat Shorts drip marketing karakter Genshin Impact, Januari–September 2026, dari kanal resmi @GenshinImpact.
+Paket uji CLI untuk **registrasi dan verifikasi manual** kandidat Shorts drip marketing karakter Genshin Impact dari kanal resmi @GenshinImpact, Januari–September 2026.
 
-API hanya membaca judul, channel ID dan waktu publikasi. Penentuan apakah video benar-benar pengumuman awal/drip marketing dilakukan manusia. Teaser/demo tidak menggantikan kandidat yang hilang.
+**Mulai dari [panduan pengguna lengkap](docs/USER_GUIDE.md).** Panduan menjelaskan instalasi Windows/PowerShell, tempat API key, input link, metadata, setiap kolom verifikasi manual, audit hasil, retensi, serta solusi error umum. Untuk teman yang mencoba, gunakan [checklist dan format laporan tes](docs/TESTING.md).
 
-## Instalasi
+## Instalasi singkat — PowerShell
 
-Python 3.12 disarankan. Di PowerShell:
+Dari folder yang berisi file ini:
 
 ```powershell
 python -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-python -m genshin_research prepare-audit
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m genshin_research prepare-audit
+.\.venv\Scripts\python.exe -m genshin_research audit
 ```
 
-Perintah terakhir membuat `data/events.csv` dan `data/discovery_coverage.csv`. Jika sudah ada, isinya dipertahankan. Berkas revenue/output dari versi lama yang berada di data lokal juga tidak dihapus.
+Python 3.12 disarankan. Pemanggilan langsung Python .venv tidak memerlukan aktivasi PowerShell. macOS/Linux memakai python3 untuk membuat .venv dan .venv/bin/python untuk menjalankan perintah berikutnya. Tes memakai fixture sintetis/HTTP mock tanpa API key atau kuota.
 
-## Langkah yang dilakukan sekarang
+## Alur pengguna
 
-1. Tambahkan kandidat melalui terminal, atau isi langsung data/events.csv. Contoh:
+1. prepare-audit membuat registry dan catatan penelusuran di data/ tanpa menimpa file yang sudah ada.
+2. register menerima link Short/ID dan nama karakter opsional; ID event otomatis, status pending. Link sama tidak menggandakan baris.
+3. metadata membaca judul, waktu publikasi dan channel ID melalui API. Aktifkan scope metadata dan environment YOUTUBE_API_KEY secara privat sesuai panduan. Simpan hasil ke paket lokal dengan manifest retensi.
+4. Manusia menonton konten dan memeriksa bukti pengumuman awal lintas platform, lalu mengisi registry. API tidak mengklasifikasikan drip marketing.
+5. audit memeriksa kelengkapan data dan merangkum keputusan manual serta penelusuran bulanan. purge tersedia untuk paket kedaluwarsa.
 
-   ```powershell
-   python -m genshin_research register "https://youtube.com/shorts/-2um93gmb3A" --character "Linnea"
-   ```
-
-   Ganti link dan nama untuk kandidat lain. --character bersifat opsional dan merupakan input peneliti, bukan hasil verifikasi API. ID event dibuat otomatis; status selalu pending. Link yang sama menghasilkan already_registered tanpa mengubah keputusan atau data yang sudah ada. Registrasi berjalan offline tanpa API key dan tidak membuktikan format Shorts maupun waktu publikasi. Link diterima pada register; perintah metadata tetap menerima ID video.
-
-2. Verifikasi metadata API sesuai [panduan metadata](docs/metadata-audit.md). Tidak ada komentar yang diambil.
-3. Periksa sendiri konten Short dan sumber pengumuman awal lintas platform. Catat timestamp pengumuman awal terpisah dari timestamp publikasi Short, serta bukti dalam verification_notes.
-4. Tentukan keputusan manual menggunakan tabel di bawah. Jangan mengisi tanggal atau bukti dari perkiraan.
-5. Catat status penelusuran setiap bulan dalam discovery_coverage.csv: not_started, partial, atau completed. completed membutuhkan checked_at_utc dan evidence_notes. Registry kosong tidak membuktikan tidak ada event.
-
-| Keputusan | inclusion_status | Catatan |
-|---|---|---|
-| Belum selesai diperiksa | pending | Biarkan kolom yang belum diketahui kosong |
-| Memenuhi definisi penelitian | included | Lengkapi seluruh bukti; content_type=verified_initial_drip_short |
-| Video tidak memenuhi kriteria | excluded | Isi exclusion_reason |
-| Pengumuman telah dicari tetapi tidak ada Short yang sesuai | no_matching_short | Catat alasan dan bukti penelusuran |
-
-Audit registry lokal:
+Contoh registrasi offline:
 
 ```powershell
-python -m genshin_research audit
+.\.venv\Scripts\python.exe -m genshin_research register "https://youtube.com/shorts/-2um93gmb3A" --character "Linnea"
 ```
 
-Jika registry berisi metadata API, simpan di paket yang memiliki manifest retensi (lihat panduan), lalu tunjuk berkasnya:
+Link contoh sudah ada di template, sehingga already_registered adalah hasil yang wajar. Ganti link untuk kandidat baru. Semua instruksi pengisian dan perintah API ada di [panduan pengguna](docs/USER_GUIDE.md).
+
+## Batas tahap ini
+
+Hanya Shorts yang diverifikasi manusia sebagai pengumuman awal/drip marketing dapat dimasukkan. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman lintas platform dipisahkan dari publikasi Short; tanggal publikasi harus berasal dari API. Default offline/dry-run. Data, key dan konfigurasi privat tidak dimasukkan ke Git.
+
+Versi ini belum mengambil komentar atau menganalisis sentimen/revenue. Setelah audit manual dan kelayakan dataset selesai, tahap berikutnya dapat dibangun: komentar utama Inggris dalam 72 jam pertama, tiga kelas sentimen memakai model pretrained lokal, evaluasi manual, dan agregat akhir-jendela bulan t dipasangkan dengan estimasi mobile revenue t+1 dari satu seri konsisten. Implementasi terdahulu tersedia dalam riwayat Git, misalnya ee3b941.
+
+Hubungan tersebut eksploratif, bukan kausal. Komentator bukan representasi seluruh pemain/pembayar; data retrospektif tidak merekonstruksi komentar yang dihapus. Perbedaan cakupan audiens/revenue, tren, update dan rerun perlu dipertimbangkan; forecasting ditunda.
+
+## Pemeriksaan pengembang
 
 ```powershell
-python -m genshin_research audit --events data/metadata_candidate_001/events.csv --coverage data/discovery_coverage.csv
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+.\.venv\Scripts\python.exe -m ruff check genshin_research
+.\.venv\Scripts\python.exe -m ruff format --check genshin_research
 ```
 
-Audit memeriksa kelengkapan kolom, timestamp, periode kandidat, duplikasi ID, dan sebaran event yang telah dicatat included. Audit tidak menonton video atau menyatakan keputusan manusia pasti benar. Periode berlaku pada publikasi Short: `2026-01-01 <= tanggal UTC < 2026-10-01`.
-
-## Tes tanpa API
-
-```powershell
-python -m unittest discover -s tests -v
-```
-
-Tes memakai data sintetis dan HTTP mock. Tidak menggunakan kuota API, mengambil komentar, atau mengunduh model. Opsional: `python -m pip install -r requirements-dev.txt`, lalu `python -m ruff check genshin_research` dan `python -m ruff format --check genshin_research`.
-
-## Yang ditunda
-
-Pengumpulan komentar, preprocessing, inferensi sentimen, anotasi, evaluasi model, impor revenue dan analisis hubungan bulanan belum tersedia dalam versi aktif. Implementasi sebelumnya tersimpan dalam riwayat Git, misalnya commit `ee3b941`; tidak perlu dipasang untuk verifikasi manual.
-
-Setelah audit manual dan penilaian kelayakan selesai, tahap selanjutnya dapat dibangun: komentar utama Inggris pada 72 jam pertama, sentimen positif/negatif/netral memakai model pretrained lokal tanpa fine-tuning, evaluasi manual, lalu agregasi akhir-jendela bulan t terhadap estimasi mobile revenue t+1 dari satu seri konsisten. Tidak ada forecasting pada tahap awal.
-
-Hubungan tersebut bersifat eksploratif, bukan kausal. Komentator bukan representasi seluruh pemain/pembayar. Data retrospektif tidak merekonstruksi komentar yang telah dihapus. Tren waktu, update game, rerun banner dan beda cakupan audiens/revenue perlu dilaporkan; sembilan bulan kandidat tidak menjamin dataset cukup.
-
-## Data dan konfigurasi
-
-Default offline/dry-run; key dibaca dari environment YOUTUBE_API_KEY. `.env.example` hanya contoh nama variabel, tidak dimuat otomatis. Jangan masukkan key, bukti API atau data penelitian ke Git/chat. Data lokal dan konfigurasi *.local.json diabaikan Git. Secret cloud tidak otomatis tersedia di PowerShell lokal.
-
-Lihat [panduan metadata dan retensi](docs/metadata-audit.md) serta [catatan kebijakan](docs/policy-review.md). Dokumen tersebut tetap dipertahankan untuk menjelaskan batas penggunaan data.
+GitHub Actions menjalankan tes offline dan pemeriksaan gaya. [Catatan kebijakan](docs/policy-review.md) tetap menjadi rujukan batas penggunaan data. [Panduan metadata lama](docs/metadata-audit.md) mengarah ke panduan pengguna yang sama.

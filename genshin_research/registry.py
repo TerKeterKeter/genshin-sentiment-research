@@ -49,7 +49,7 @@ def register_candidate(value, events="data/events.csv", character=""):
         raise FileNotFoundError(
             "Registry missing; run python -m genshin_research prepare-audit first"
         )
-    with path.open(newline="", encoding="utf-8") as stream:
+    with path.open(newline="", encoding="utf-8-sig") as stream:
         reader = csv.DictReader(stream)
         fields = reader.fieldnames
         if (

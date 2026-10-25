@@ -72,3 +72,13 @@ class RegistrationTests(unittest.TestCase):
     def test_negative_id_and_trailing_slash(self):
         self.assertEqual(video_id_from_input('-ABCDEFGHIJ'), '-ABCDEFGHIJ')
         self.assertEqual(video_id_from_input(f'https://m.youtube.com/shorts/{VIDEO}/'), VIDEO)
+
+    def test_excel_utf8_bom_remains_readable_after_registration(self):
+        path = Path('data/events.csv')
+        path.write_text(path.read_text(encoding='utf-8'), encoding='utf-8-sig')
+        register_candidate(VIDEO, character='SYNTHETIC')
+        before = path.read_bytes()
+        register_candidate('-ABCDEFGHIJ')
+        self.assertTrue(path.read_bytes().startswith(before))
+        self.assertEqual(read_csv(path)[0]['event_id'], 'candidate_001')
+        self.assertEqual(len(read_csv(path)), 2)

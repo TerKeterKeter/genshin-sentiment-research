@@ -12,7 +12,7 @@ def utc(value):
 
 
 def read_csv(path):
-    with open(path, newline="", encoding="utf-8") as stream:
+    with open(path, newline="", encoding="utf-8-sig") as stream:
         return list(csv.DictReader(stream))
 
 
