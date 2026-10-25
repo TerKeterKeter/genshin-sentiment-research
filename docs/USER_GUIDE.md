@@ -1,175 +1,159 @@
-# Panduan pengguna — verifikasi kandidat Short
+# Panduan aplikasi untuk peneliti dan teman penguji
 
-Produk tahap ini adalah CLI untuk mencatat kandidat, membaca metadata YouTube, mengisi keputusan manual, lalu mengaudit registry. Periode publikasi kandidat: Januari–September 2026, UTC. Pengumpulan komentar dan analisis sentimen dikembangkan setelah tahap ini selesai.
+Semua pekerjaan sehari-hari dilakukan lewat browser. Terminal hanya untuk instalasi dan menyalakan server.
 
-## 1. Unduh dan buka folder yang benar
+## 1. Instalasi
 
-Buka [branch proyek](https://github.com/TerKeterKeter/genshin-sentiment-research/tree/feat/offline-research-foundation). Pilih Code → Download ZIP, ekstrak, lalu buka PowerShell di folder yang berisi README.md, requirements.txt, config.json dan folder genshin_research. Folder Downloads terkadang memiliki dua lapis nama folder setelah ekstraksi.
+1. Unduh [branch proyek](https://github.com/TerKeterKeter/genshin-sentiment-research/tree/feat/offline-research-foundation) melalui Code → Download ZIP. Ekstrak ke folder lokal. Jika mengganti versi lama, simpan cadangan data/ dan konfigurasi privat dengan mengikuti retensinya.
+2. Instal Python 3.12, buka terminal pada folder yang memiliki README.md, setup_project.py dan run.py.
+3. Jalankan `python setup_project.py`. Installer membuat .venv, memasang PyTorch CPU dari indeks resmi, lalu dependensi aplikasi. Jika instalasi gagal, perbaiki koneksi/versi Python sesuai error dan ulangi; jangan menonaktifkan verifikasi TLS.
+4. Jalankan `python run.py` atau klik ganda run.bat pada Windows. Buka `http://127.0.0.1:5000` di browser komputer yang sama. Jangan tutup terminal selama proses berjalan. Ctrl+C menghentikan server.
 
-Sebelum mengganti versi lama, salin cadangan data/ dan konfigurasi privat ke tempat lokal yang aman. Jangan mengganti berkas kerja dengan template kosong. Saat membagikan proyek ke teman, bagikan tautan GitHub; key dan data nyata tetap privat.
+Jika port dipakai program lain: `python run.py --port 5001`, lalu buka port 5001 di browser. Python setup_project.py juga dapat dijalankan ulang untuk melengkapi instalasi. Tidak menghapus data penelitian. macOS/Linux memakai python3 jika perintah python tidak tersedia.
 
-## 2. Instalasi dan tes offline
+Instalasi dan model memerlukan ruang disk beberapa GB. Model sekitar 500 MB diunduh saat NLP pertama; proses sesudahnya memakai cache lokal. Tidak perlu GPU.
 
-Python 3.12 disarankan. Jalankan dari root proyek:
+## 2. Di mana API key diisi?
 
-```powershell
-python --version
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe -m genshin_research prepare-audit
-.\.venv\Scripts\python.exe -m genshin_research audit
-```
+Buka **Pengaturan & API**, masukkan key pada kolom password, lalu klik Simpan pengaturan. Key tidak ditampilkan kembali dan hanya disimpan di memori proses server. Setelah server ditutup, masukkan lagi saat diperlukan. Jangan mengetik key ke CSV, konfigurasi yang dilacak Git, chat atau laporan pengujian.
 
-Perintah di atas memakai Python virtual environment secara langsung; aktivasi PowerShell tidak diperlukan. Hasil tes harus OK. prepare-audit membuat data/events.csv dan data/discovery_coverage.csv, atau melaporkan preserved jika keduanya sudah ada. Satu kandidat contoh dari template masih pending; included_verified_events=0 dan issues=[] merupakan hasil awal yang wajar. Tes ini tidak mengakses API dan tidak memakai kuota.
+Alternatif untuk environment cloud: inject secret bernama YOUTUBE_API_KEY. Key cloud tidak otomatis tersedia di laptop teman. `.env.example` hanya menjelaskan nama variabel; file .env tidak dimuat otomatis. Tombol Hapus key menghapus key dari memori aplikasi.
 
-Untuk macOS/Linux: buat .venv dengan python3 -m venv .venv dan ganti setiap `.\.venv\Scripts\python.exe` dengan `.venv/bin/python`.
+Key proyek harus dapat memakai YouTube Data API v3. Jika mendapat HTTP 400/403, periksa aktivasi API, kuota dan pembatasan key; jangan kirim nilainya saat meminta bantuan.
 
-## 3. Input link kandidat
+## 3. Mode offline dan scope
 
-```powershell
-.\.venv\Scripts\python.exe -m genshin_research register "https://youtube.com/shorts/-2um93gmb3A" --character "Linnea"
-```
+Default **Offline / dry-run** aktif. Kamu tetap dapat mengelola kandidat dan data manual. Untuk operasi nyata, tinjau [kebijakan](policy-review.md), catat tanggal serta referensi dasar penggunaan proyek pada Pengaturan, lalu aktifkan scope yang berlaku dan nonaktifkan dry-run:
 
-Ganti link dan nama karakter untuk kandidat lain. --character opsional; nilainya adalah input peneliti, bukan konfirmasi API. Video ID dan URL diisi dari tautan; ID event dibuat otomatis dan statusnya pending. Timestamp, channel ID dan keputusan konten tidak diisi otomatis.
+- Baca metadata: hanya videos.list/channels.list.
+- Kumpulkan komentar: mengambil komentar utama untuk event yang telah diverifikasi.
+- Analisis sentimen: pemrosesan dan evaluasi API Data nyata.
+- Gabung revenue: agregasi sentimen dengan seri revenue eksternal.
 
-Karena template sudah memuat link contoh, perintah contoh biasanya menghasilkan already_registered. Ini bukan error; baris lama tidak diubah, termasuk jika sudah memiliki keputusan manual. Link baru menghasilkan registered dan menambah satu baris. Link /watch, domain lain atau ID tidak valid ditolak.
+Aktifkan secara terpisah. Checkbox mencatat scope penggunaan yang didokumentasikan, bukan pemberian izin dari platform. API key, status akademik, atau jawaban chatbot tidak otomatis menjadi dasar seluruh penggunaan turunan. Kode lengkap tetap dapat diuji dengan fixture sintetis tanpa pengumpulan data nyata.
 
-Registrasi tidak membutuhkan API key. Untuk registry selain default, tambahkan `--events data/NAMA_PAKET/events.csv` ke register. Lokasi harus berada di dalam data/.
+Retensi 1–30 hari berlaku untuk paket yang masih mengandung teks. Memperpendek retensi juga memperpendek batas data yang ada; menggantinya ke angka lebih besar tidak memperpanjang expiry lama.
 
-## 4. API key ditaruh di mana?
+## 4. CRUD kandidat lewat browser
 
-Program membaca **environment variable YOUTUBE_API_KEY pada komputer yang menjalankannya**. Key yang disimpan di cloud tidak otomatis tersedia di laptop teman. Gunakan key proyek yang diizinkan untuk pengujian dan pastikan YouTube Data API v3 aktif di Google Cloud Console.
+Buka **Kandidat & verifikasi**:
 
-Di PowerShell, masukkan key lewat prompt tersembunyi berikut:
+- **Tambah:** isi satu link `https://youtube.com/shorts/VIDEO_ID`, nama karakter opsional, klik Tambah. Duplikat ditolak tanpa membuat baris baru. Tidak ada impor massal link.
+- **Baca:** daftar memperlihatkan status manual dan metadata yang tersedia. Buka / edit untuk detail.
+- **Edit:** ubah nama, sumber pengumuman awal, timestamp dan catatan manusia. Perubahan link video membatalkan metadata dan mengembalikan status pending agar tidak memakai bukti video lama.
+- **Hapus:** harus mencentang konfirmasi. Dataset komentar dan semua turunannya yang bergantung pada event itu juga dihapus, bukan hanya baris registry.
 
-```powershell
-$youtubeKey = Read-Host "Masukkan YouTube API key" -AsSecureString
-$env:YOUTUBE_API_KEY = [System.Net.NetworkCredential]::new("", $youtubeKey).Password
-Remove-Variable youtubeKey
-```
+Untuk mencatat pengumuman tanpa Short yang sesuai, isi nama karakter dan biarkan link kosong. Lengkapi alasan penelusuran dan pilih no_matching_short. Jangan mengisi teaser/demo sebagai pengganti.
 
-Ketik/paste key saat prompt muncul. Nilai key tidak ditulis di perintah, history terminal atau file proyek. Jangan mengirim key/screenshot nilainya ke teman melalui laporan tes. Variabel berlaku untuk sesi PowerShell ini dan proses Python yang dijalankannya; ulangi saat membuka terminal baru. Untuk menghapusnya setelah selesai: `Remove-Item Env:YOUTUBE_API_KEY`.
+## 5. Ambil metadata dan verifikasi manual
 
-Jangan menaruh key di config.json, permissions.json atau CSV. `.env.example` hanya menjelaskan nama variabel; file .env **tidak dimuat otomatis** oleh aplikasi. Jika memakai cloud, isi secret YOUTUBE_API_KEY pada pengaturan environment, simpan/publish sesuai UI, lalu jalankan di cloud tersebut.
+Pada detail event klik **Ambil / refresh metadata**. Setelah proses selesai, kembali ke detail. API mengisi judul, channel ID, timestamp publikasi dan kecocokan kanal resmi. Tanggal publikasi tidak diambil dari percakapan, judul atau hasil pencarian.
 
-## 5. Aktifkan scope metadata lokal
+Manusia tetap harus menonton Short serta memeriksa pengumuman awal lintas platform:
 
-Baca [catatan kebijakan](policy-review.md). Konfigurasi di Git tetap offline/dry-run. Untuk pembacaan metadata yang kamu putuskan untuk lakukan, buat dua berkas privat memakai editor teks, misalnya VS Code. Jika berkas sudah ada, tinjau/edit isinya; jangan menimpanya tanpa cadangan.
-
-**config.local.json**:
-
-```json
-{
-  "candidate_start": "2026-01-01",
-  "candidate_end_exclusive": "2026-10-01",
-  "dry_run": false
-}
-```
-
-**permissions.local.json**:
-
-```json
-{
-  "policy_review_status": "documented",
-  "policy_reviewed_at": "YYYY-MM-DD",
-  "evidence_reference": "Read-only metadata audit; docs/USER_GUIDE.md and docs/policy-review.md",
-  "metadata_allowed": true,
-  "retention_days": 30
-}
-```
-
-Ganti YYYY-MM-DD dengan tanggal kamu meninjau penggunaan metadata. JSON memakai tanda kutip ganda dan boolean true/false tanpa kutip. Simpan sebagai .json, bukan .json.txt. Kedua berkas tidak berisi key dan sudah dikecualikan Git. Scope ini hanya untuk pembacaan metadata; bukan persetujuan analisis sentimen.
-
-## 6. Ambil metadata kandidat
-
-Contoh untuk kandidat pertama:
-
-```powershell
-.\.venv\Scripts\python.exe -m genshin_research --config config.local.json --permissions permissions.local.json metadata --package data/metadata_candidate_001 -- -2um93gmb3A
-```
-
-Opsi global --config dan --permissions diletakkan sebelum metadata. `--` sebelum ID diperlukan karena ID contoh dimulai dengan minus. Perintah metadata menerima **ID**, sedangkan register menerima **link atau ID**.
-
-Hasilnya berisi title, channel_id, video_published_at_utc, duration dan matches_official_channel. True pada kecocokan kanal berarti channel ID cocok dengan @GenshinImpact; hal itu tidak membuktikan klasifikasi drip marketing atau bahwa video tersebut adalah pengumuman pertama.
-
-Bukti disimpan di data/metadata_candidate_001/metadata.json dan manifest.json. Nama paket harus baru; jika sudah ada, gunakan nama lain seperti data/metadata_candidate_001_recheck. Jangan menghapus bukti atau registry yang sudah diisi hanya untuk menjalankan ulang perintah. Setiap panggilan metadata mengambil data terbaru dan menggunakan kuota API.
-
-## 7. Isi verifikasi manual
-
-Siapkan registry di dalam paket bukti pertama supaya ikut aturan retensi. Perintah PowerShell berikut mempertahankan berkas tujuan jika sudah ada:
-
-```powershell
-if (!(Test-Path "data/metadata_candidate_001/events.csv")) {
-    Copy-Item "data/events.csv" "data/metadata_candidate_001/events.csv"
-}
-```
-
-Mulai saat ini, gunakan `data/metadata_candidate_001/events.csv` sebagai registry utama. Untuk kandidat berikutnya, register dengan --events menunjuk registry ini, lalu ambil metadata ke paket bukti baru. Jangan kembali mengisi salinan lama data/events.csv. Seluruh isi registry utama tetap mengikuti tanggal kedaluwarsa paket pertama; tambahan baris tidak memperpanjang retensi. Jika paket pertama kedaluwarsa, lakukan refresh yang sesuai dan salin ulang hanya data yang telah diperiksa/di-refresh; jangan memperpanjang manifest lama secara manual.
-
-Buka CSV memakai editor tabel atau Excel. Pada Excel, gunakan Data → From Text/CSV, delimiter koma, encoding UTF-8, dan tipe kolom teks untuk ID/timestamp. Simpan sebagai **CSV UTF-8**, bukan .xlsx atau CSV pemisah titik koma. Program menerima UTF-8 biasa dan UTF-8 dengan BOM. Pertahankan nama kolom. Tutup CSV di Excel sebelum menjalankan perintah yang menulis file.
-
-Tonton Short, periksa kanal resminya, dan cari bukti pengumuman awal karakter lintas platform. Isi satu baris per event:
-
-| Kolom | Cara mengisi |
+| Field | Sumber/pengisian |
 |---|---|
-| event_id | Dibuat register; pertahankan ID unik ini |
-| character_name | Nama karakter setelah diperiksa; boleh koreksi input awal |
-| video_id, video_url | Identitas video dari register; cocokkan dengan bukti API |
-| channel_id | Salin persis dari metadata.json; pastikan matches_official_channel=true |
-| video_published_at_utc | Salin persis timestamp API, bukan perkiraan dari judul/pencarian |
-| announcement_source_url | URL bukti pengumuman awal lintas platform |
-| initial_announcement_at_utc | Waktu pengumuman awal dari bukti tersebut, dikonversi ke UTC |
-| content_type | verified_initial_drip_short hanya setelah verifikasi konten selesai |
-| inclusion_status | pending, included, excluded, atau no_matching_short |
-| exclusion_reason | Wajib untuk excluded/no_matching_short; jelaskan alasan konkret |
-| verification_notes | Bukti apa yang diperiksa, alasan keputusan, nama/inisial pemeriksa dan tanggal pemeriksaan bila sesuai prosedur tim |
+| Link Short dan video ID | Input kandidat; API memverifikasi ketersediaan |
+| Judul, channel ID, publikasi UTC | Respons API; tidak diedit sebagai tanggal manual |
+| Nama karakter | Diperiksa peneliti berdasarkan konten |
+| Sumber pengumuman awal | URL bukti pertama lintas platform |
+| Waktu pengumuman awal UTC | Waktu dari bukti tersebut, terpisah dari publikasi Short |
+| Jenis konten | Pilih Short pengumuman awal, sudah diperiksa hanya bila benar |
+| Status | pending / included / excluded / no_matching_short |
+| Alasan pengecualian | Wajib untuk excluded atau no_matching_short |
+| Catatan | Bukti yang diperiksa, pemeriksa/tanggal dan alasan keputusan |
 
-Timestamp UTC menggunakan pola YYYY-MM-DDTHH:MM:SSZ. Jangan menyamakan waktu pengumuman awal dengan waktu publikasi Short tanpa bukti. Jika waktunya belum dapat dibuktikan, biarkan kosong dan pertahankan pending.
+Timestamp menggunakan YYYY-MM-DDTHH:MM:SSZ atau ISO dengan timezone yang jelas. Jangan menyamakan kedua timestamp tanpa bukti. Kandidat included membutuhkan metadata resmi dan seluruh bukti manual lengkap; ketidakpastian tetap pending. Periode publikasi kandidat adalah 1 Januari hingga sebelum 1 Oktober 2026 UTC. Teaser/demo dikecualikan.
 
-Gunakan included setelah seluruh bukti lengkap. Gunakan excluded untuk teaser/demo, video bukan kanal resmi, atau kandidat di luar periode, dengan alasan. Gunakan no_matching_short jika pencarian pengumuman telah dilakukan tetapi Short yang sesuai tidak ditemukan; status ini dapat ditambahkan manual sebagai event tersendiri walau video_id/video_url kosong. Jangan mengisi video pengganti yang tidak memenuhi definisi.
+Pada **Cakupan bulanan**, catat pencarian Januari–September: not_started, partial, completed. Completed membutuhkan timestamp dan catatan strategi/bukti pencarian. Satu event ditemukan tidak membuktikan seluruh bulan telah ditelusuri.
 
-Di data/discovery_coverage.csv, catat hasil penelusuran tiap bulan: not_started, partial, atau completed. Completed berarti pencarian bulan itu telah dilakukan sesuai prosedur pencarian yang dicatat; bukan sekadar satu video ditemukan. Lengkapi checked_at_utc dan evidence_notes.
+## 6. Kumpulkan komentar
 
-## 8. Audit hasil pengisian
+Buka **Komentar & NLP** setelah event included tersedia. Pilih:
 
-```powershell
-.\.venv\Scripts\python.exe -m genshin_research audit --events data/metadata_candidate_001/events.csv --coverage data/discovery_coverage.csv
-```
+- **Pilot temporal:** 6–8 event dipilih merata menurut waktu, bukan dugaan sentimen/revenue.
+- **Semua included:** seluruh event yang memenuhi syarat; dapat dipakai untuk uji satu event, tetapi uji kecil belum membuktikan dataset layak.
 
-- candidate_events: jumlah baris kandidat.
-- included_verified_events: jumlah baris included yang lolos pemeriksaan kelengkapan dan periode.
-- pending_events: kandidat yang masih perlu diperiksa.
-- issues: masalah yang perlu diperbaiki, seperti timestamp tidak valid, bukti belum lengkap, atau ID duplikat.
-- discovery_by_month: status pencarian bulan; not_started tidak berarti tidak ada event.
+Klik Mulai pengumpulan. Progress halaman dan jumlah komentar tampil pada halaman proses. API mengecek ulang metadata, kemudian menelusuri seluruh halaman commentThreads.list. Balasan/profil penulis tidak dikumpulkan. Komentar disaring lokal pada `[publikasi, publikasi+72 jam)`. Komentar editedAt pada/selepas cutoff dikeluarkan untuk analisis utama; jumlahnya dilaporkan. Likes saat pengambilan tidak menjadi bobot historis.
 
-`issues=[]` hanya menunjukkan tidak ada masalah yang dideteksi validator, bukan bukti semua kandidat sudah terverifikasi. Data di luar periode juga dilaporkan meskipun keputusan pengecualian sudah dicatat, agar tidak masuk ringkasan event yang diterima. Hasil audit tidak otomatis mengubah keputusan manual. Kelayakan penelitian masih perlu dinilai setelah registry lengkap.
+Setiap pengambilan membuat dataset baru. Jika jaringan, kuota atau komentar dinonaktifkan menyebabkan pengambilan terputus, hasil parsial tetap tersimpan dengan status belum lengkap. Perbaiki penyebab, lalu buat pengambilan baru; tidak ada klaim melanjutkan pagination lama secara otomatis. Dataset terputus tidak boleh masuk NLP/analisis utama. Hapus paket lama sesuai kebutuhan dan retensi.
 
-## 9. Penyimpanan dan penyerahan hasil tes
+Jangan menghentikan server saat proses berjalan. Satu pekerjaan dijalankan pada satu waktu. Jika server ditutup, pekerjaan berhenti dan status lengkap tidak dipaksakan.
 
-Paket berisi metadata dan registry mengikuti manifest, maksimum 30 hari. Periksa expires_at dan gunakan purge bila perlu:
+## 7. NLP sentimen lokal
 
-```powershell
-.\.venv\Scripts\python.exe -m genshin_research purge --package data/metadata_candidate_001
-```
+Buka dataset lengkap, klik **1. Jalankan NLP lokal**. Unduhan pertama memerlukan internet ke Hugging Face dan CDN bobotnya. Model memakai revision tetap dan checksum; jika unduhan gagal, perbaiki jaringan/cache yang bermasalah dan ulangi, bukan mengubah checksum atau mematikan TLS.
 
-Purge biasa menghapus hanya paket yang kedaluwarsa. --force menghapus segera **seluruh isi paket**, termasuk registry; gunakan hanya jika memang hendak menghapusnya. Salinan ekspor/cadangan juga harus mengikuti aturan penyimpanan; purge tidak menemukan salinan di lokasi lain otomatis.
+Teks dinormalisasi whitespace/NFC tanpa menghapus negasi/emoji. Bahasa dideteksi dengan seed tetap; komentar non-Inggris/undetermined dikeluarkan dan jumlahnya dilaporkan. Spam dan teks identik ditandai, tidak otomatis dihapus. Bahasa pendek/slang dapat salah terdeteksi. Input panjang yang dipotong ke 512 token diberi penanda.
 
-Gunakan [checklist pengujian](TESTING.md) untuk teman yang mencoba. Untuk laporan awal, cukup kirim versi Python, hash commit/branch, perintah yang dicoba, status berhasil/gagal, dan error yang telah diperiksa agar tidak berisi key atau data terbatas. Jangan unggah data/, config.local.json, permissions.local.json, key, atau bukti API ke Git.
+Model mengembalikan positive/negative/neutral. Label adalah prediksi, bukan ground truth. Komentar tidak dikirim ke API AI eksternal. Model dilatih pada Twitter sehingga evaluasi manual untuk YouTube tetap penting.
 
-## Masalah umum
+## 8. Anotasi dan evaluasi
 
-| Gejala | Yang perlu diperiksa |
+Klik **2. Anotasi manual**, lalu Buat sampel. Maksimum 200 komentar dipilih acak berstrata event × interval 0–24/24–48/48–72 jam, seed 42. Jika eligible kurang, semua tersedia dipakai; laporkan jumlah sebenarnya.
+
+Prediksi model disembunyikan. Isi label sesuai panduan pada halaman; anotator 1/2 bekerja independen. Positive = evaluasi menyukai; negative = ketidaksukaan/kritik; neutral = tanpa evaluasi jelas. Niat gacha tidak otomatis positif. Tandai ambiguous/off_topic terpisah. Jika belum dapat diputuskan, kosongkan gold; isi adjudicated_label setelah adjudikasi.
+
+Simpan setiap halaman sebelum berpindah. CSV sampel dapat diunduh dan diisi privat oleh anotator, lalu diimpor kembali; gunakan ID sampel yang sama. Teks dan identitas sampel tidak diganti oleh upload. Ikuti retensi untuk salinan yang dibagikan.
+
+Klik **3. Evaluasi model**. Hasil: jumlah gold yang benar-benar digunakan, macro-F1, confusion matrix, jumlah belum dinilai, dan Cohen κ jika tersedia dua set label yang memadai. Skor tidak muncul bila gold kosong. Tidak ada ambang skor yang secara otomatis menjamin penelitian layak. Perubahan anotasi/NLP membatalkan hasil evaluasi/analisis lama.
+
+## 9. Revenue manual
+
+Buka **Revenue**. Unduh template CSV atau isi satu bulan lewat form. Gunakan **satu seri** dengan cakupan mobile, wilayah dan CN Android konsisten. Kandidat sumber https://revenue.ennead.cc/revenue harus diperiksa manual; aplikasi tidak mengarang angka.
+
+- month: YYYY-MM, tepat satu revisi yang dipilih per bulan.
+- revenue_usd: angka USD tanpa pemisah ribuan; kosong = hilang, 0 = nilai nol. Konversikan satuan juta jika sumber memakai juta USD dan dokumentasikan.
+- platform_scope / region_scope: cakupan eksplisit sumber.
+- cn_android_included: true/false/unknown; multiplier positif hanya bila komponen tersebut disertakan dan estimasinya relevan. Jelaskan komponen/revisi di revision_notes.
+- source_url: URL seri sumber HTTPS tanpa kredensial.
+- retrieved_at: tanggal pengambilan atau timestamp ISO dengan timezone.
+- available_at_utc: waktu nilai/revisi tersebut benar-benar tersedia dari sumber. Opsional untuk korelasi, wajib untuk eksperimen forecast; jangan isi tanggal historis dari perkiraan atau menyamakan retrieval sekarang dengan ketersediaan masa lalu.
+
+Impor CSV meminta konfirmasi karena mengganti seri yang ada. Perubahan seri membatalkan hasil analisis lama. Duplikasi bulan, angka nonfinite/negatif dan cakupan campuran ditolak. Validasi format tidak membuktikan kebenaran angka maupun hak penggunaan sumber.
+
+## 10. Analisis hubungan bulanan
+
+Setelah NLP dan evaluasi manual, klik **4. Analisis revenue t+1**. Semua event/komentar berasal dari snapshot dataset yang sama; registry yang berubah sesudah koleksi ditandai agar tidak tercampur diam-diam.
+
+Komentar eligible digabung menurut bulan saat jendela 72 jam berakhir. Hasil berisi jumlah event/komentar, proporsi tiga kelas, dan net sentiment = positive proportion − negative proportion. Event dengan banyak komentar mempunyai kontribusi lebih besar; likes tidak dibobotkan. Bulan tanpa event tidak diisi netral, dan bulan dengan event tetapi tanpa komentar eligible memiliki net sentiment kosong.
+
+Agregat bulan t dipasangkan dengan revenue t+1 hanya jika bulan revenue sudah selesai dan nilainya tersedia. Jumlah pasangan aktual dan alasan tidak berpasangan dilaporkan. Scatter berlabel bulan dan Spearman dibuat bila data bervariasi dan jumlah pasangan memadai untuk dihitung (minimum teknis 3, bukan jaminan power statistik). Revenue tidak digandakan ke setiap komentar.
+
+Berkas monthly.csv, pairs.csv, coverage.csv, revenue.csv snapshot, analysis.json, dan scatter.png dapat diunduh. Jangan menafsirkan hubungan sebagai kausal. Perhatikan tren, update, rerun, serial dependence dan beda audiens/revenue.
+
+## 11. Forecasting eksperimen
+
+Klik **5. Forecast eksperimen** setelah analisis. Ridge dengan satu fitur net sentiment dibandingkan naïf revenue terakhir. Scaling hanya fit pada training; evaluasi berurutan waktu, bukan random split. Target training hanya digunakan jika waktu ketersediaannya sebelum origin evaluasi.
+
+Pemeriksaan: minimal 8 pasangan berurutan tanpa gap, variasi fitur, scope penelusuran selesai tanpa pending, tanggal ketersediaan revenue terdokumentasi, dan setidaknya 3 origin evaluasi dengan minimal 4 training points. Ini ambang teknis demonstrasi, bukan jaminan kelayakan ilmiah. Dataset sembilan bulan dapat gagal memenuhi pemeriksaan.
+
+Hasil dapat berupa blocked, hindcast_only, atau experimental_projection. Hindcast memakai komentar yang direkonstruksi retrospektif; bukan arsip komentar lengkap pada waktu historis dan bukan bukti akurasi real-time. MAE Ridge dan baseline dilaporkan, termasuk bila model tidak mengalahkan baseline.
+
+Estimasi untuk target bulan berjalan diberi label nowcast, bukan prediksi masa depan. Target yang sudah diketahui/berlalu tidak diberi label future forecast. Tidak ada proyeksi per karakter atau interval kepercayaan palsu. Jangan gunakan eksperimen ini sebagai saran finansial atau klaim sebab-akibat.
+
+## 12. Data, penghapusan dan pengujian teman
+
+Aplikasi memakai data/workbench. Saat inisialisasi pertama, registry/coverage lama data/events.csv dan data/discovery_coverage.csv disalin jika ada; sumber asli tetap utuh. Setelah itu gunakan browser agar tidak mengedit salinan berbeda. Ekspor CSV tersedia untuk inspeksi.
+
+Key browser hilang saat proses server berhenti. CSV/JSON data tetap tersimpan. Metadata mempunyai expiry per event; pada expiry metadata dikosongkan dan included kembali pending. Dataset mempunyai manifest maksimum 30 hari yang mencakup komentar, prediksi, anotasi dan semua turunan. Paket kedaluwarsa dihapus ketika aplikasi aktif dan tidak ada job berjalan; jalankan aplikasi secara berkala atau lakukan penghapusan terjadwal sendiri jika tidak aktif.
+
+Menghapus event menghapus pula dataset/turunan yang merujuknya. Menghapus dataset menghapus seluruh isi paketnya. Konfirmasi diperlukan. Cadangan dan ekspor di luar folder aplikasi tidak ditemukan purge otomatis; ikuti retensi secara terpisah.
+
+Aplikasi diikat ke localhost untuk satu pengguna lokal, bukan deployment multiuser. Teman menjalankan salinan sendiri di komputernya. Jangan masukkan data nyata/key ke Git atau mengirimnya dalam laporan tes. Gunakan [checklist penguji](TESTING.md).
+
+### Masalah umum
+
+| Gejala | Tindakan |
 |---|---|
-| No module named genshin_research | Terminal harus berada di folder berisi genshin_research dan config.json |
-| Python tidak ditemukan | Instal Python, lalu buka ulang PowerShell; periksa python --version |
-| No module named requests | Jalankan pip install lewat Python .venv seperti langkah instalasi |
-| YOUTUBE_API_KEY required | Key harus tersedia pada sesi/mesin tempat Python dijalankan; secret cloud tidak tersalin ke laptop |
-| Real-data operation disabled in dry-run mode | Gunakan opsi global --config config.local.json sebelum metadata |
-| Document metadata access... | Periksa isi permissions.local.json, scope, tanggal, referensi dan retensi 1–30 hari |
-| FileExistsError saat metadata | Paket sudah ada; gunakan nama baru dan pertahankan registry yang telah diisi |
-| PermissionError saat register | Tutup CSV di Excel, lalu periksa izin tulis folder |
-| Header CSV tidak lengkap | Gunakan UTF-8 dengan delimiter koma, pertahankan nama kolom; jangan ganti berkas dengan .xlsx |
-| HTTP 400/403 | Periksa key, aktivasi YouTube Data API v3, kuota dan pembatasan key proyek; jangan menyalin key ke laporan |
-| Transport failure | Periksa koneksi internet/proxy; untuk cloud pastikan www.googleapis.com diizinkan |
-| Video unavailable or invalid ID | Periksa ID, akses video, dan apakah video masih tersedia |
+| Modul/dependensi tidak ditemukan | Jalankan ulang python setup_project.py dari folder proyek |
+| Browser tidak tersambung | Pastikan python run.py tetap berjalan; periksa port pada terminal |
+| Operasi diblokir offline/scope | Periksa Pengaturan: dry-run, scope yang berlaku, tanggal dan referensi dasar penggunaan |
+| Key belum tersedia/HTTP 400/403 | Isi key di browser; periksa aktivasi API, kuota dan restriction proyek |
+| Pengambilan terputus | Perbaiki error, lalu buat dataset baru; jangan menjadikan data parsial sebagai lengkap |
+| NLP model tidak dapat diunduh | Periksa ruang disk, koneksi HTTPS huggingface.co dan CDN, khususnya us.aws.cdn.hf.co |
+| Tidak ada eligible Inggris | Periksa eksklusi waktu/edit/bahasa, serta sampel deteksi bahasa; jangan memaksa label |
+| Gold manual kosong | Buat sampel, isi/adjudikasi label, simpan halaman, lalu evaluasi |
+| Forecast blocked | Baca alasan kecukupan/ketersediaan data; jangan mengarang bulan atau angka agar lolos |
+
+Pada cloud dengan allowlist jaringan, model card dan bobot bisa memakai domain berbeda. Draft domain CDN yang disimpan belum otomatis mengubah runtime; tinjau/simpan dan publish pengaturan environment. Semua instalasi tetap mempertahankan verifikasi TLS dan checksum.

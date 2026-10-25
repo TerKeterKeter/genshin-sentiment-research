@@ -1,53 +1,50 @@
-# Genshin sentiment research
+# Genshin Research Desk
 
-Paket uji CLI untuk **registrasi dan verifikasi manual** kandidat Shorts drip marketing karakter Genshin Impact dari kanal resmi @GenshinImpact, Januari–September 2026.
+Aplikasi web lokal untuk penelitian mahasiswa: CRUD kandidat Short, verifikasi manusia, pengumpulan komentar YouTube, sentimen pretrained lokal, anotasi/evaluasi, hubungan dengan revenue bulanan, dan forecasting sederhana **eksperimental**.
 
-**Mulai dari [panduan pengguna lengkap](docs/USER_GUIDE.md).** Panduan menjelaskan instalasi Windows/PowerShell, tempat API key, input link, metadata, setiap kolom verifikasi manual, audit hasil, retensi, serta solusi error umum. Untuk teman yang mencoba, gunakan [checklist dan format laporan tes](docs/TESTING.md).
+**[Panduan penggunaan lengkap](docs/USER_GUIDE.md)** · **[Metodologi dan batasan](docs/METHODOLOGY.md)** · **[Checklist uji teman](docs/TESTING.md)**
 
-## Instalasi singkat — PowerShell
+## Mulai
 
-Dari folder yang berisi file ini:
+Unduh branch `feat/offline-research-foundation`, ekstrak, lalu buka terminal di folder yang berisi file ini. Gunakan Python 3.12 yang telah diuji.
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+python setup_project.py
+python run.py
+```
+
+Instalasi pertama memasang PyTorch CPU dan dependensi; membutuhkan internet serta ruang disk beberapa GB. Buka `http://127.0.0.1:5000` di browser pada komputer yang sama. Pada Windows, setelah instalasi, aplikasi juga dapat dijalankan dengan klik ganda **run.bat**. Terminal server tetap dibuka; Ctrl+C menghentikannya. Jika port terpakai: `python run.py --port 5001`.
+
+**Tidak perlu mengetik link satu per satu di PowerShell.** Gunakan halaman Kandidat & verifikasi di browser. API key diisi pada Pengaturan & API, hanya tersimpan di memori server; jangan menaruh key di Git, CSV atau chat. Environment `YOUTUBE_API_KEY` tetap didukung. `.env` tidak dimuat otomatis.
+
+## Alur aplikasi
+
+1. **Pengaturan & API:** masukkan key dan dokumentasikan dasar penggunaan serta scope yang berlaku. Default offline/dry-run; tidak ada pengumpulan otomatis.
+2. **Kandidat & verifikasi:** tambah, baca, edit, atau hapus kandidat melalui form. Ambil metadata API, lalu manusia memutuskan apakah konten benar pengumuman awal/drip marketing. Periode Januari–September 2026. Tanpa impor massal link, sesuai keputusan pengguna.
+3. **Cakupan bulanan:** catat penelusuran tiap bulan dan event tanpa Short yang sesuai.
+4. **Komentar & NLP:** pilih pilot temporal atau seluruh event included, kumpulkan komentar utama, lalu jalankan model lokal. Progres ditampilkan di browser. Pagination terputus tidak masuk analisis utama.
+5. **Anotasi dan evaluasi:** sampel hingga 200 komentar, tiga kelas, prediksi disembunyikan saat anotasi, macro-F1, confusion matrix dan Cohen κ bila tersedia dua anotator.
+6. **Revenue:** isi satu seri konsisten lewat form bulanan atau impor CSV manual. Angka tidak diambil atau dikarang otomatis.
+7. **Analisis:** agregasi akhir jendela 72 jam bulan t → revenue t+1, Spearman dan scatter berlabel bulan. Forecasting Ridge dibandingkan baseline naïf, hanya berjalan bila pemeriksaan data terpenuhi.
+
+## Batas interpretasi
+
+Bukan analisis kausal dan komentator tidak mewakili seluruh pemain/pembayar. Likes saat pengambilan bukan bobot historis. Data retrospektif tidak merekonstruksi komentar yang telah dihapus. Forecasting dapat berstatus **blocked**; itu hasil pemeriksaan kelayakan, bukan bukti aplikasi gagal. Dataset Januari–September dapat terlalu kecil untuk prediksi yang dapat diandalkan.
+
+Model: `cardiffnlp/twitter-roberta-base-sentiment-latest`, revision tetap, CC-BY-4.0; catatan sumber dan checksum terdapat di metodologi. Bobot sekitar 500 MB diunduh saat NLP pertama, kemudian dipakai lokal. Tidak ada fine-tuning atau pengiriman teks komentar ke layanan AI eksternal.
+
+## Penyimpanan
+
+Proyek browser berada di `data/workbench/`. Saat pertama kali dibuat, aplikasi menyalin registry/coverage lama dari data/ jika tersedia; berkas sumber tidak ditimpa. Sesudah itu edit data melalui aplikasi. Key tidak ditulis ke pengaturan. Paket komentar, label, anotasi dan grafik mengikuti manifest maksimum 30 hari; metadata event mempunyai tanggal kedaluwarsa sendiri. Penghapusan event juga menghapus dataset yang bergantung padanya. Ekspor/cadangan di luar aplikasi harus dikelola sendiri.
+
+Aplikasi untuk satu pengguna lokal; teman menjalankan salinan sendiri. Mode debug mati dan server hanya mengikat loopback. Jangan menaruh data nyata atau key ke Git. Tidak disediakan dashboard publik atau sistem akun bersama.
+
+## Tes dan CLI
+
+```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe -m genshin_research prepare-audit
-.\.venv\Scripts\python.exe -m genshin_research audit
 ```
 
-Python 3.12 disarankan. Pemanggilan langsung Python .venv tidak memerlukan aktivasi PowerShell. macOS/Linux memakai python3 untuk membuat .venv dan .venv/bin/python untuk menjalankan perintah berikutnya. Tes memakai fixture sintetis/HTTP mock tanpa API key atau kuota.
+Tes otomatis menggunakan fixture sintetis dan API/model mock. Tidak mengambil komentar nyata atau membuktikan akurasi model pada data penelitian. Tes gaya opsional: instal requirements-dev.txt lalu jalankan ruff check/format --check untuk genshin_research.
 
-## Alur pengguna
-
-1. prepare-audit membuat registry dan catatan penelusuran di data/ tanpa menimpa file yang sudah ada.
-2. register menerima link Short/ID dan nama karakter opsional; ID event otomatis, status pending. Link sama tidak menggandakan baris.
-3. metadata membaca judul, waktu publikasi dan channel ID melalui API. Aktifkan scope metadata dan environment YOUTUBE_API_KEY secara privat sesuai panduan. Simpan hasil ke paket lokal dengan manifest retensi.
-4. Manusia menonton konten dan memeriksa bukti pengumuman awal lintas platform, lalu mengisi registry. API tidak mengklasifikasikan drip marketing.
-5. audit memeriksa kelengkapan data dan merangkum keputusan manual serta penelusuran bulanan. purge tersedia untuk paket kedaluwarsa.
-
-Contoh registrasi offline:
-
-```powershell
-.\.venv\Scripts\python.exe -m genshin_research register "https://youtube.com/shorts/-2um93gmb3A" --character "Linnea"
-```
-
-Link contoh sudah ada di template, sehingga already_registered adalah hasil yang wajar. Ganti link untuk kandidat baru. Semua instruksi pengisian dan perintah API ada di [panduan pengguna](docs/USER_GUIDE.md).
-
-## Batas tahap ini
-
-Hanya Shorts yang diverifikasi manusia sebagai pengumuman awal/drip marketing dapat dimasukkan. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman lintas platform dipisahkan dari publikasi Short; tanggal publikasi harus berasal dari API. Default offline/dry-run. Data, key dan konfigurasi privat tidak dimasukkan ke Git.
-
-Versi ini belum mengambil komentar atau menganalisis sentimen/revenue. Setelah audit manual dan kelayakan dataset selesai, tahap berikutnya dapat dibangun: komentar utama Inggris dalam 72 jam pertama, tiga kelas sentimen memakai model pretrained lokal, evaluasi manual, dan agregat akhir-jendela bulan t dipasangkan dengan estimasi mobile revenue t+1 dari satu seri konsisten. Implementasi terdahulu tersedia dalam riwayat Git, misalnya ee3b941.
-
-Hubungan tersebut eksploratif, bukan kausal. Komentator bukan representasi seluruh pemain/pembayar; data retrospektif tidak merekonstruksi komentar yang dihapus. Perbedaan cakupan audiens/revenue, tren, update dan rerun perlu dipertimbangkan; forecasting ditunda.
-
-## Pemeriksaan pengembang
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m ruff check genshin_research
-.\.venv\Scripts\python.exe -m ruff format --check genshin_research
-```
-
-GitHub Actions menjalankan tes offline dan pemeriksaan gaya. [Catatan kebijakan](docs/policy-review.md) tetap menjadi rujukan batas penggunaan data. [Panduan metadata lama](docs/metadata-audit.md) mengarah ke panduan pengguna yang sama.
+CLI lama prepare-audit, register, metadata, audit, purge tetap tersedia. CLI web: `.\.venv\Scripts\python.exe -m genshin_research serve`. Untuk pekerjaan harian gunakan browser dan [panduan pengguna](docs/USER_GUIDE.md).

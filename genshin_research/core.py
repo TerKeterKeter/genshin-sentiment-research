@@ -39,7 +39,7 @@ def authorize(config, permissions, operation):
         or not 0 < permissions["retention_days"] <= 30
     ):
         raise PermissionError(
-            "Document metadata access and policy review; packages require retention of 1-30 days"
+            "Document the requested data-use scope and policy review; packages require retention of 1-30 days"
         )
 
 

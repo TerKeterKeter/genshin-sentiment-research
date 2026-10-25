@@ -1,58 +1,59 @@
-# Checklist uji pengguna
+# Checklist trial aplikasi
 
-Gunakan [panduan pengguna](USER_GUIDE.md) dari folder proyek yang baru diunduh. Tujuannya memastikan teman yang belum mengenal kode dapat menjalankan tahap verifikasi kandidat. Uji ini belum menilai akurasi sentimen atau kelayakan hubungan revenue.
+Ikuti [panduan pengguna](USER_GUIDE.md). Bagikan tautan branch/ZIP, jangan data pribadi atau key.
 
-## Bagian A — tanpa key/internet API
+## A. Instalasi dan CRUD browser
 
-| Langkah | Hasil yang diharapkan |
-|---|---|
-| Instal requirements.txt dalam .venv | Instalasi berhasil; tidak mengunduh model |
-| Jalankan unittest discover | Semua tes selesai dengan OK; HTTP dimock |
-| Jalankan prepare-audit dua kali | Pertama created; kedua preserved, data tidak hilang |
-| Audit registry awal | Satu kandidat pending, nol included, issues kosong |
-| Register link contoh dari panduan | already_registered karena sudah ada di template |
-| Register link Short kandidat lain | Satu ID event baru, pending, tanpa tanggal/klasifikasi otomatis |
-| Register link yang sama lagi | already_registered; jumlah baris dan catatan lama tidak berubah |
-| Coba domain lain atau /watch URL | Ditolak; registry tetap sama |
+- Jalankan python setup_project.py, lalu python run.py. Halaman ringkasan muncul pada localhost.
+- Default offline aktif. Buka semua menu tanpa key: ringkasan, kandidat, cakupan, dataset, revenue, pengaturan.
+- Tambah satu link Short, buka detail, edit nama/catatan, simpan. Duplikat ditolak tanpa menambah baris.
+- Ganti link: metadata lama dikosongkan dan status kembali pending.
+- Catat pengumuman tanpa Short dengan nama saja, lalu no_matching_short dan alasan.
+- Uji hapus hanya pada kandidat uji yang memang boleh dihapus; konfirmasi dibutuhkan. Jangan hapus data kerja demi tes.
+- Tutup dan jalankan ulang server: data tetap ada; key yang dimasukkan melalui browser harus diisi lagi.
 
-Jangan menggunakan link/angka rekaan sebagai observasi penelitian. Fixture sintetis hanya tersedia dalam tes otomatis. Catat apakah pesan error dapat dipahami pengguna.
+## B. Metadata dan koleksi nyata, bila scope proyek tersedia
 
-## Bagian B — API metadata, opsional bila key proyek tersedia
+- Isi key di Pengaturan, tanggal/referensi scope, dan matikan offline hanya untuk operasi yang diizinkan.
+- Ambil metadata satu kandidat. Channel ID/timestamp berasal dari API; included tetap memerlukan keputusan manusia.
+- Lengkapi sumber pengumuman awal, jenis konten dan catatan. Kandidat tanpa bukti tidak dapat menjadi included.
+- Pilih semua event untuk uji kecil atau pilot temporal ketika minimal enam tersedia.
+- Mulai pengumpulan. Progres tampil dan dataset menyimpan jumlah halaman, deduplikasi, lengkap/terputus, serta expiry.
+- Jangan membuat klaim kesiapan jika API/key/kuota belum diuji. Dataset terputus harus diblokir dari NLP/analisis utama.
 
-1. Masukkan key melalui prompt PowerShell sesuai panduan; nilai tidak boleh muncul pada output.
-2. Buat/tinjau konfigurasi privat untuk scope metadata.
-3. Jalankan metadata pada kandidat yang dipilih dengan nama paket baru.
-4. Pastikan metadata.json dan manifest.json dibuat, dan tidak ada komentar yang diambil.
-5. Cocokkan channel ID, timestamp dan judul dengan respons API. Status kanal tidak otomatis menjadi keputusan drip marketing.
-6. Coba nama paket yang sama: berkas lama harus tetap utuh; gunakan nama paket baru bila perlu mengulang.
+## C. Sentimen, anotasi dan revenue
 
-Bagian B belum dijalankan pada komputer Windows teman sebelum ia sendiri mencobanya. Keberhasilan API di cloud tidak menjamin key/jaringan lokal sudah dikonfigurasi dengan benar.
+- Jalankan NLP. Unduhan model pertama sekitar 500 MB; periksa bahwa masalah jaringan menghasilkan pesan yang jelas. Jangan menonaktifkan TLS atau checksum.
+- Baca jumlah non-English/undetermined, edited-after-cutoff, duplikasi/spam dan truncation.
+- Buat sampel anotasi, isi label tanpa melihat prediksi, simpan per halaman. Jika dua anotator, kerjakan independen.
+- Evaluasi: cek n gold, macro-F1, confusion matrix dan agreement. Gold kosong harus ditolak.
+- Isi/upload satu seri revenue yang provenance/cakupannya sudah diperiksa. Bulan duplikat/cakupan campuran harus ditolak.
+- Jalankan analisis: jumlah pasangan aktual, missing reasons dan scatter bulanan tersedia. Sampel satu event tidak otomatis menghasilkan korelasi.
+- Jalankan forecast: blocked pada data kecil/missing timing adalah hasil yang benar. Jika berjalan, cek urutan waktu, MAE terhadap baseline, serta label nowcast/forecast yang tepat.
 
-## Bagian C — keputusan manusia dan audit
+## D. Otomasi yang tersedia
 
-1. Salin registry ke paket bukti pertama hanya jika belum ada. Gunakan salinan itu secara konsisten.
-2. Isi satu kandidat berdasarkan bukti nyata. Jika bukti belum cukup, pertahankan pending.
-3. Jalankan audit dengan path registry yang sedang diedit. Periksa jumlah included/pending dan catatan issues.
-4. Jika menggunakan Excel, simpan sebagai CSV UTF-8, tutup file, lalu coba register kandidat lain ke registry tersebut; baris lama harus tetap utuh.
-5. Simpan catatan penelusuran bulanan dan pemeriksaannya. Jangan mengubah semua bulan menjadi completed tanpa pencarian yang sesuai.
-6. Periksa manifest retensi. Jangan menjalankan purge --force pada registry yang masih dibutuhkan.
+`.venv` Python menjalankan `-m unittest discover -s tests -v`. Fixture sintetis/HTTP dan classifier mock menguji CRUD → metadata → koleksi → NLP → anotasi → evaluasi → analisis → penolakan forecast, serta fungsi forecasting pada seri sintetis yang memenuhi pemeriksaan. Pengujian ini tidak membuktikan akurasi empiris model.
 
-Jangan sengaja merusak registry kerja nyata untuk pengujian. Gunakan salinan lokal yang aman bila ingin mencoba timestamp salah atau status tidak valid. Pengujian otomatis sudah memiliki kasus sintetis untuk kesalahan tersebut.
+Server HTTP nyata dan metadata read-only dapat diuji terpisah. Uji browser di Windows dan pengumpulan/analisis data penelitian harus dicatat tersendiri; jangan menyebut langkah belum dicoba sebagai lulus. Tidak ada demo data palsu yang disajikan sebagai hasil penelitian.
 
 ## Format laporan teman
 
-Salin format berikut ke pesan/laporan; periksa terlebih dahulu agar tidak berisi key atau data terbatas:
-
 ```text
 Commit/branch atau tanggal ZIP:
-Windows dan versi Python:
-Langkah yang dicoba:
-Perintah (tanpa key):
+OS dan versi Python:
+Langkah/menu yang dicoba:
 Hasil yang diharapkan:
 Hasil aktual:
-Berhasil/gagal/belum dicoba:
-Error yang sudah disunting bila perlu:
-Bagian panduan yang membingungkan:
+Lulus/gagal/belum dicoba:
+Pesan error (tanpa key atau data terbatas):
+Bagian panduan/UI yang membingungkan:
 ```
 
-Laporkan bagian yang belum dicoba sebagai belum dicoba. Untuk tahap ini, keberhasilan adalah alur registrasi → metadata → keputusan manual → audit dapat dijalankan dan data tersimpan pada tempat yang benar; bukan sekadar tes unit lulus.
+Jangan kirim API key, cookie sesi, komentar mentah, identitas sampel atau data terbatas dalam screenshot/laporan. Berkas ekspor dan backup tetap mengikuti retensi.
+
+## Bukti validasi pengembangan saat penyerahan
+
+Pada 26 Oktober 2026 (Asia/Jakarta), 35 tes otomatis lulus; pemeriksaan gaya dan sintaks JavaScript lulus. Alur browser melalui Flask test client memakai data sintetis serta API/classifier mock. Server HTTP nyata, CRUD, dan satu metadata kandidat read-only lewat YouTube API juga berhasil; tidak ada komentar penelitian yang dikumpulkan untuk validasi ini. Installer dapat diulang pada Linux dan launcher python run.py berhasil menyajikan halaman offline.
+
+Model card, revision, label dan checksum bobot diverifikasi dari sumber resmi. Inferensi dengan bobot sebenarnya **belum berhasil dijalankan di cloud**: unduhan ditolak HTTP 403 pada CDN us.aws.cdn.hf.co. Domain tersebut ditambahkan ke draft jaringan, tetapi saving draft tidak menerapkannya ke runtime; perlu review/simpan/publish pengaturan. Pengujian native Windows dan inferensi bobot pada komputer teman masih perlu dicatat sebagai belum dicoba sampai benar-benar dijalankan. Model mock tidak diperlakukan sebagai bukti akurasi/runtime pretrained.

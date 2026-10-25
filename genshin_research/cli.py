@@ -40,6 +40,9 @@ def build_parser():
     )
     review.add_argument("--events", default="data/events.csv")
     review.add_argument("--coverage", default="data/discovery_coverage.csv")
+    serve = sub.add_parser("serve", help="Open the local browser workbench")
+    serve.add_argument("--port", type=int, default=5000)
+    serve.add_argument("--data-dir", default="data/workbench")
     purge = sub.add_parser("purge", help="Delete an expired local package")
     purge.add_argument("--package", required=True)
     purge.add_argument("--force", action="store_true")
@@ -48,6 +51,13 @@ def build_parser():
 
 def main(argv=None):
     args = build_parser().parse_args(argv)
+    if args.command == "serve":
+        from .web import create_app
+
+        create_app(args.data_dir).run(
+            host="127.0.0.1", port=args.port, debug=False, use_reloader=False
+        )
+        return
     if args.command == "prepare-audit":
         report = prepare_audit(args.destination)
     elif args.command == "register":
