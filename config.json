@@ -1,16 +1,5 @@
 {
-  "candidate_start": "2024-01-01",
+  "candidate_start": "2026-01-01",
   "candidate_end_exclusive": "2026-10-01",
-  "window_hours": 72,
-  "language": "en",
-  "dry_run": true,
-  "random_seed": 42,
-  "model_id": "cardiffnlp/twitter-roberta-base-sentiment-latest",
-  "model_revision": null,
-  "model_license": "REQUIRES_MODEL_CARD_VERIFICATION",
-  "label_mapping": {
-    "negative": "negative",
-    "neutral": "neutral",
-    "positive": "positive"
-  }
+  "dry_run": true
 }

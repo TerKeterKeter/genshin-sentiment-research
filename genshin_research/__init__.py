@@ -1,1 +1,1 @@
-"""Student research workflow; synthetic offline mode by default."""
+"""Offline-first preparation and manual verification of candidate events."""

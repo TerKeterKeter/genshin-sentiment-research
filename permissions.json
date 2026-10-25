@@ -1,10 +1,7 @@
 {
-  "policy_review_status": "pending_network_access",
-  "policy_reviewed_at": null,
-  "evidence_reference": null,
-  "collection_allowed": false,
-  "derived_analysis_allowed": false,
-  "external_join_allowed": false,
-  "retention_days": null,
-  "notes": "No real data authorized. Record project-specific permission and applicable refresh/deletion obligations before enabling."
+  "policy_review_status": "reviewed",
+  "policy_reviewed_at": "2026-10-25",
+  "evidence_reference": "docs/policy-review.md",
+  "metadata_allowed": false,
+  "retention_days": 30
 }
