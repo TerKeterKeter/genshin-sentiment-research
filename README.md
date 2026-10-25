@@ -4,7 +4,7 @@ Aplikasi web lokal untuk penelitian mahasiswa: CRUD kandidat Short, verifikasi m
 
 **[Panduan penggunaan lengkap](docs/USER_GUIDE.md)** · **[Metodologi dan batasan](docs/METHODOLOGY.md)** · **[Checklist uji teman](docs/TESTING.md)**
 
-## Mulai
+Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari 2026–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
 
 Unduh branch `feat/offline-research-foundation`, ekstrak, lalu buka terminal di folder yang berisi file ini. Gunakan Python 3.12 yang telah diuji.
 
