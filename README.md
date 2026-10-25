@@ -19,7 +19,14 @@ Perintah terakhir membuat `data/events.csv` dan `data/discovery_coverage.csv`. J
 
 ## Langkah yang dilakukan sekarang
 
-1. Tambahkan kandidat ke `data/events.csv`: ID event unik, nama karakter bila diketahui, video_url, video_id, dan inclusion_status=pending. ID video adalah bagian setelah `/shorts/`; CLI menerima ID, belum URL lengkap.
+1. Tambahkan kandidat melalui terminal, atau isi langsung data/events.csv. Contoh:
+
+   ```powershell
+   python -m genshin_research register "https://youtube.com/shorts/-2um93gmb3A" --character "Linnea"
+   ```
+
+   Ganti link dan nama untuk kandidat lain. --character bersifat opsional dan merupakan input peneliti, bukan hasil verifikasi API. ID event dibuat otomatis; status selalu pending. Link yang sama menghasilkan already_registered tanpa mengubah keputusan atau data yang sudah ada. Registrasi berjalan offline tanpa API key dan tidak membuktikan format Shorts maupun waktu publikasi. Link diterima pada register; perintah metadata tetap menerima ID video.
+
 2. Verifikasi metadata API sesuai [panduan metadata](docs/metadata-audit.md). Tidak ada komentar yang diambil.
 3. Periksa sendiri konten Short dan sumber pengumuman awal lintas platform. Catat timestamp pengumuman awal terpisah dari timestamp publikasi Short, serta bukti dalam verification_notes.
 4. Tentukan keputusan manual menggunakan tabel di bawah. Jangan mengisi tanggal atau bukti dari perkiraan.

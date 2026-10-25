@@ -9,6 +9,7 @@ from .core import authorize, read_csv, read_json
 from .management import purge_package
 from .metadata_audit import save_metadata_package, verify_metadata
 from .preparation import prepare_audit
+from .registry import register_candidate
 from .youtube import YouTube
 
 
@@ -23,6 +24,12 @@ def build_parser():
         "prepare-audit", help="Create local registry and discovery CSVs"
     )
     prepare.add_argument("--destination", default="data")
+    register = sub.add_parser(
+        "register", help="Register a candidate Short link offline"
+    )
+    register.add_argument("video", help="HTTPS Shorts link or video ID")
+    register.add_argument("--character", default="")
+    register.add_argument("--events", default="data/events.csv")
     metadata = sub.add_parser(
         "metadata", help="Read video/channel metadata, without classifying content"
     )
@@ -43,6 +50,8 @@ def main(argv=None):
     args = build_parser().parse_args(argv)
     if args.command == "prepare-audit":
         report = prepare_audit(args.destination)
+    elif args.command == "register":
+        report = register_candidate(args.video, args.events, args.character)
     elif args.command == "purge":
         report = {"purged": purge_package(args.package, force=args.force)}
     elif args.command == "audit":
