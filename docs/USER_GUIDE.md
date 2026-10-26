@@ -146,7 +146,9 @@ Aplikasi diikat ke localhost untuk satu pengguna lokal, bukan deployment multius
 
 | Gejala | Tindakan |
 |---|---|
-| Modul/dependensi tidak ditemukan | Jalankan ulang python setup_project.py dari folder proyek |
+| No module named pip | Installer terbaru memulihkan pip otomatis. Untuk versi lama: `.\.venv\Scripts\python.exe -m ensurepip --upgrade`, lalu ulangi setup |
+| No module named flask / instalasi belum lengkap | Setup belum berhasil sampai akhir. Jalankan python setup_project.py sampai muncul Instalasi selesai, baru python run.py |
+| Modul/dependensi lain tidak ditemukan | Jalankan ulang python setup_project.py dari folder proyek |
 | Browser tidak tersambung | Pastikan python run.py tetap berjalan; periksa port pada terminal |
 | Operasi diblokir offline/scope | Periksa Pengaturan: dry-run, scope yang berlaku, tanggal dan referensi dasar penggunaan |
 | Key belum tersedia/HTTP 400/403 | Isi key di browser; periksa aktivasi API, kuota dan restriction proyek |
