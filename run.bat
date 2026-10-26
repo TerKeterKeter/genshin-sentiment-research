@@ -5,5 +5,5 @@ if not exist ".venv\Scripts\python.exe" (
   pause
   exit /b 1
 )
-".venv\Scripts\python.exe" -m genshin_research serve %*
+".venv\Scripts\python.exe" run.py %*
 if errorlevel 1 pause

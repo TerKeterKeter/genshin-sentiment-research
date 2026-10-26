@@ -16,3 +16,15 @@ jobs:
         run: |
           python -m ruff check genshin_research
           python -m ruff format --check genshin_research
+  bootstrap:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Repair environment without pip and check launcher diagnostics
+        run: python -m unittest discover -s tests -p test_bootstrap.py -v
