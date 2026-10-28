@@ -30,7 +30,7 @@ from .analysis import (
 )
 from .audit import STATUSES, audit
 from .collection import COMMENT_FIELDS, collect_event
-from .core import authorize, read_csv, read_json, utc
+from .core import DataUseSettingsError, authorize, read_csv, read_json, utc
 from .jobs import Jobs
 from .registry import video_id_from_input
 from .sentiment import (
@@ -103,7 +103,12 @@ def create_app(data_dir="data/workbench"):
         key = app.config["YOUTUBE_API_KEY"]
         if key:
             message = message.replace(key, "[REDACTED]")
-        return render_template("error.html", message=message), 400
+        requirements = (
+            error.requirements if isinstance(error, DataUseSettingsError) else []
+        )
+        return render_template(
+            "error.html", message=message, requirements=requirements
+        ), 400
 
     def allowed(operation):
         settings = store.settings()
@@ -141,6 +146,10 @@ def create_app(data_dir="data/workbench"):
         return render_template(
             "home.html", events=events, runs=store.runs(), report=report
         )
+
+    @app.get("/guide")
+    def guide_page():
+        return render_template("guide.html")
 
     @app.get("/events")
     def events_page():

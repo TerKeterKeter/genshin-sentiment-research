@@ -1,1 +1,21 @@
-{% extends 'base.html' %}{% block content %}<h1>Langkah belum dapat dijalankan</h1><section><p class="notice error">{{ message }}</p><p>Periksa input, scope pengaturan, status dataset, dan koneksi yang diperlukan. Tidak ada perubahan izin otomatis.</p><a href="{{ url_for('home') }}" class="button secondary">Kembali ke ringkasan</a></section>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<h1>Langkah belum dapat dijalankan</h1>
+<section>
+  {% if requirements %}
+  <p class="notice error">Pengaturan untuk langkah ini belum lengkap. Lengkapi butir berikut di Pengaturan & API.</p>
+  <ul>{% for requirement in requirements %}<li>{{ requirement }}</li>{% endfor %}</ul>
+  <p>Klik <b>Simpan pengaturan</b>, lalu kembali dan ulangi langkah yang tadi dipilih. Aplikasi belum menghubungi YouTube untuk permintaan ini.</p>
+  <p class="muted">Catatan ini mendokumentasikan keputusan penggunaan proyek. Mengisi form atau memiliki API key tidak memberikan izin dari YouTube.</p>
+  <div class="actions">
+    <a href="{{ url_for('settings_page') }}" class="button">Buka Pengaturan & API</a>
+    <a href="{{ url_for('guide_page') }}#pengaturan" class="button secondary">Lihat panduan pengaturan</a>
+  </div>
+  {% else %}
+  <p class="notice error">{{ message }}</p>
+  <p>Periksa input, status dataset, dan koneksi yang diperlukan. Buka panduan jika belum mengetahui urutan langkahnya.</p>
+  <a href="{{ url_for('guide_page') }}" class="button secondary">Buka panduan</a>
+  {% endif %}
+  <a href="{{ url_for('home') }}" class="button secondary">Kembali ke ringkasan</a>
+</section>
+{% endblock %}

@@ -1,11 +1,12 @@
 # Checklist trial aplikasi
 
-Ikuti [panduan pengguna](USER_GUIDE.md). Bagikan tautan branch/ZIP, jangan data pribadi atau key.
+Mulai dari [panduan untuk teman](PANDUAN_TEMAN.md); detail lanjutan ada di [panduan pengguna](USER_GUIDE.md). Bagikan tautan branch/ZIP, jangan data pribadi atau key.
 
 ## A. Instalasi dan CRUD browser
 
 - Jalankan python setup_project.py, lalu python run.py. Halaman ringkasan muncul pada localhost.
-- Default offline aktif. Buka semua menu tanpa key: ringkasan, kandidat, cakupan, dataset, revenue, pengaturan.
+- Default offline aktif. Buka semua menu tanpa key: ringkasan, kandidat, cakupan, dataset, revenue, pengaturan, panduan untuk teman.
+- Dengan pengaturan penggunaan belum lengkap, coba tombol metadata. Error harus menyebut butir yang belum terpenuhi dan menyediakan tautan Pengaturan; tidak ada panggilan API. Lengkapi catatan yang benar dan simpan sebelum mencoba ulang.
 - Tambah satu link Short, buka detail, edit nama/catatan, simpan. Duplikat ditolak tanpa menambah baris.
 - Ganti link: metadata lama dikosongkan dan status kembali pending.
 - Catat pengumuman tanpa Short dengan nama saja, lalu no_matching_short dan alasan.
@@ -53,6 +54,8 @@ Bagian panduan/UI yang membingungkan:
 Jangan kirim API key, cookie sesi, komentar mentah, identitas sampel atau data terbatas dalam screenshot/laporan. Berkas ekspor dan backup tetap mengikuti retensi.
 
 ## Bukti validasi pengembangan saat penyerahan
+
+Pada 28 Oktober 2026 (Asia/Jakarta), **41 tes offline lulus**, termasuk perbaikan installer tanpa pip dan pengujian pesan pengaturan: hanya butir yang belum lengkap ditampilkan, permintaan API belum dijalankan saat diblokir, dan metadata dapat dicoba ulang setelah pengaturan disimpan tanpa mengaktifkan operasi lain. Menu panduan dan pemeriksaan gaya Python juga lulus. Ini tidak mencatat uji baru terhadap pengumpulan komentar nyata atau inferensi dengan bobot sebenarnya.
 
 Pada 26 Oktober 2026 (Asia/Jakarta), 35 tes otomatis lulus; pemeriksaan gaya dan sintaks JavaScript lulus. Alur browser melalui Flask test client memakai data sintetis serta API/classifier mock. Server HTTP nyata, CRUD, dan satu metadata kandidat read-only lewat YouTube API juga berhasil; tidak ada komentar penelitian yang dikumpulkan untuk validasi ini. Installer dapat diulang pada Linux dan launcher python run.py berhasil menyajikan halaman offline.
 

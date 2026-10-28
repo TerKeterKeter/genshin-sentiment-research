@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Panduan untuk teman</h1>
+<p>Mulai dengan satu kandidat. Setelah instalasi, pengisian dan pengambilan data dilakukan melalui halaman aplikasi ini.</p>
+<div class="notice">Manusia memilih link dan memverifikasi drip marketing. API mengambil metadata dan komentar setelah tombol dijalankan. Angka revenue tetap diisi manual dari satu seri sumber.</div>
+<section>
+  <h2>1. Instalasi dan menyalakan aplikasi</h2>
+  <p>Pada Windows, pasang Python 3.12. Ekstrak ZIP proyek dan buka PowerShell pada folder yang berisi <code>setup_project.py</code> dan <code>run.py</code>.</p>
+  <pre>python setup_project.py
+python run.py</pre>
+  <p>Tunggu pesan <b>Instalasi selesai</b> sebelum menjalankan perintah kedua. Buka alamat yang ditampilkan di terminal, biasanya <code>http://127.0.0.1:5000</code>. Biarkan terminal berjalan. Besok cukup jalankan <code>python run.py</code> atau klik ganda <code>run.bat</code>.</p>
+  <p>Jika versi lama melaporkan <code>No module named pip</code>, jalankan perintah berikut, lalu ulangi instalasi:</p>
+  <pre>.\.venv\Scripts\python.exe -m ensurepip --upgrade</pre>
+  <p><code>No module named flask</code> berarti instalasi dependensi belum selesai. Ulangi setup; tidak perlu menghapus data.</p>
+</section>
+<section id="pengaturan">
+  <h2>2. Isi Pengaturan & API</h2>
+  <ol>
+    <li>Buka <a href="{{ url_for('settings_page') }}">Pengaturan & API</a>. Masukkan <b>API key YouTube Data API v3</b> pada kolom password. Key hanya disimpan dalam memori server dan perlu diisi kembali setelah server berhenti.</li>
+    <li>Periksa dasar penggunaan proyek. Isi <b>Tanggal tinjauan kebijakan</b> dengan tanggal peninjauan yang sebenarnya.</li>
+    <li>Pada <b>Referensi dasar penggunaan proyek</b>, catat sumber/URL atau dokumen yang benar-benar ditinjau, operasi yang dicakup, dan pembatasannya. Jika belum tahu isinya, minta penanggung jawab penelitian meninjaunya; jangan mengarang persetujuan.</li>
+    <li>Isi <b>Masa simpan data / retensi (hari)</b> dengan bilangan bulat 1–30. Misalnya 30 berarti paket disimpan paling lama 30 hari sejak dibuat. Ini berbeda dari <b>jendela komentar 72 jam</b>.</li>
+    <li>Untuk langkah metadata nyata, centang <b>Baca metadata YouTube</b> dan nonaktifkan <b>Offline / dry-run</b> setelah catatan penggunaan lengkap. Operasi lain diaktifkan sesuai langkah dan dasar penggunaan yang tersedia.</li>
+    <li>Klik <b>Simpan pengaturan</b>, lalu ulangi tombol yang sebelumnya gagal.</li>
+  </ol>
+  <p>Pesan lama <code>Document the requested data-use scope and policy review; packages require retention of 1-30 days</code> berarti ada pengaturan yang belum lengkap. Pesan itu tidak menunjukkan kolom mana yang bermasalah dan tidak membuktikan API key salah. Versi ini menampilkan butir yang perlu dilengkapi.</p>
+  <p class="muted">Mengisi form mendokumentasikan keputusan proyek, bukan memberi izin dari YouTube. Jika dasar untuk suatu operasi belum tersedia, kerjakan kandidat/data manual dalam mode offline.</p>
+</section>
+<section>
+  <h2>3. Masukkan satu link dan ambil metadata</h2>
+  <ol>
+    <li>Buka <a href="{{ url_for('events_page') }}">Kandidat & verifikasi</a>. Masukkan satu link <code>https://youtube.com/shorts/VIDEO_ID</code>, isi nama karakter bila diketahui, lalu klik <b>Tambah sebagai pending</b>.</li>
+    <li>Jika link sudah terdaftar, buka baris yang ada melalui <b>Buka / edit</b>.</li>
+    <li>Klik <b>Ambil / refresh metadata</b>. Tunggu proses selesai, klik <b>Lihat kandidat</b>, lalu buka kembali detail kandidat.</li>
+    <li>Judul, channel ID, kecocokan kanal resmi, dan waktu publikasi UTC kini berasal dari API. API tidak menentukan apakah video benar drip marketing.</li>
+  </ol>
+</section>
+<section>
+  <h2>4. Lengkapi verifikasi manusia</h2>
+  <p>Tonton Short dan periksa bukti pengumuman awal. Isi nama karakter, URL sumber pengumuman awal, waktu pengumuman awal UTC, serta catatan bukti/pemeriksa. Waktu awal lintas platform terpisah dari waktu publikasi Short.</p>
+  <p>Format waktu: <code>YYYY-MM-DDTHH:MM:SSZ</code>. Huruf Z berarti UTC; untuk WIB kurangi 7 jam, untuk WITA 8 jam, untuk WIT 9 jam, dan perhatikan pergantian tanggal. Jangan menebak waktu jika bukti tidak cukup.</p>
+  <ul>
+    <li><b>pending</b>: masih menunggu bukti/pemeriksaan.</li>
+    <li><b>included</b>: bukti lengkap, metadata kanal resmi, publikasi Januari–September 2026, dan jenis konten <b>Short pengumuman awal, sudah diperiksa</b>.</li>
+    <li><b>excluded</b>: tidak memenuhi kriteria; isi alasan, misalnya ternyata teaser/demo.</li>
+    <li><b>no_matching_short</b>: setelah penelusuran, tidak ditemukan Short yang sesuai; isi alasan. Kandidat seperti ini dapat dicatat dengan nama dan link kosong.</li>
+  </ul>
+  <p>Klik <b>Simpan verifikasi</b>. Pada <a href="{{ url_for('coverage_page') }}">Cakupan bulanan</a>, catat penelusuran tiap bulan. Pilih completed hanya setelah pencarian selesai dan waktu serta buktinya dicatat.</p>
+</section>
+<section>
+  <h2>5. Ambil komentar otomatis</h2>
+  <ol>
+    <li>Pastikan ada kandidat included dan jendela 72 jam setelah publikasi sudah selesai.</li>
+    <li>Di Pengaturan, aktifkan <b>Kumpulkan komentar utama</b> jika tercakup dasar penggunaan, lalu simpan.</li>
+    <li>Buka <a href="{{ url_for('datasets_page') }}">Komentar & NLP</a>. Untuk percobaan satu kandidat, pilih <b>Semua event included (boleh untuk uji kecil)</b>. Pilot temporal memerlukan minimal enam event.</li>
+    <li>Klik <b>Mulai pengumpulan</b>. Tunggu hingga selesai. Buka <b>Lihat dataset</b>, lalu <b>Buka</b> pada dataset yang baru dibuat.</li>
+  </ol>
+  <p>Aplikasi mengambil seluruh halaman komentar utama yang masih dapat diakses, menghapus duplikat ID, dan menandai kelayakan berdasarkan waktu. Maksimum 100 komentar per halaman API, bukan 100 komentar total. Video lama bisa memerlukan banyak halaman dan kuota.</p>
+  <p>Periksa bahwa pagination <b>lengkap</b>. Jika terputus, perbaiki masalah dan buat pengambilan baru. Setiap klik pengumpulan membuat dataset baru; tidak ada pengambilan terjadwal atau kelanjutan otomatis.</p>
+</section>
+<section>
+  <h2>6. Sentimen, evaluasi, revenue, dan eksperimen</h2>
+  <ol>
+    <li>Aktifkan operasi <b>Analisis sentimen dan evaluasi data nyata</b> jika dasarnya tersedia. Pada dataset lengkap, klik <b>1. Jalankan NLP lokal</b>. Model pertama kali mengunduh sekitar 500 MB; berikutnya menggunakan cache lokal.</li>
+    <li>Buka <b>2. Anotasi manual</b> → buat sampel → isi label manusia → simpan setiap halaman. Jika dua anotator tersedia, kerjakan secara independen.</li>
+    <li>Klik <b>3. Evaluasi model</b>. Prediksi model bukan jawaban benar; evaluasi membutuhkan label manusia.</li>
+    <li>Buka <a href="{{ url_for('revenue_page') }}">Revenue</a>. Isi form per bulan atau impor CSV dari satu seri estimasi mobile yang sudah diperiksa. Jangan mengarang angka dan tanggal ketersediaan.</li>
+    <li>Aktifkan operasi <b>Gabungkan agregat dengan revenue eksternal</b> jika tercakup dasar penggunaan. Kembali ke dataset dan klik <b>4. Analisis revenue t+1</b>.</li>
+    <li><b>5. Forecast eksperimen</b> boleh berstatus blocked karena data belum cukup. Satu kandidat hanya menguji alur; tidak cukup untuk korelasi atau prediksi yang dapat diandalkan.</li>
+  </ol>
+  <p>Sentimen dikelompokkan menurut bulan ketika jendela 72 jam selesai, lalu dipasangkan dengan revenue bulan berikutnya. Hubungan ini eksploratif; tidak membuktikan sebab-akibat atau mewakili seluruh pemain/pembayar.</p>
+</section>
+<section>
+  <h2>7. Menutup aplikasi dan melaporkan hasil</h2>
+  <p>Hentikan server dengan Ctrl+C ketika tidak ada proses berjalan. Data tersimpan di <code>data/workbench/</code>; key form tidak ikut tersimpan. Data yang kedaluwarsa dapat dihapus ketika aplikasi aktif. Cadangan/ekspor mengikuti retensi yang sama dan perlu dikelola sendiri.</p>
+  <p>Kirim laporan berisi versi/branch, langkah yang dicoba, hasil, dan pesan error. Jangan sertakan API key atau komentar mentah.</p>
+  <p><a href="https://github.com/TerKeterKeter/genshin-sentiment-research/blob/feat/offline-research-foundation/docs/PANDUAN_TEMAN.md">Panduan lengkap yang dapat dibagikan →</a></p>
+</section>
+{% endblock %}

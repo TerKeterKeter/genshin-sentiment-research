@@ -72,13 +72,74 @@ class WebTests(unittest.TestCase):
 
     def test_csrf_default_modes_and_key_never_persisted(self):
         self.assertEqual(self.client.post('/events',data={'link':'anything'}).status_code,400)
-        for route in ['/','/events','/datasets','/settings','/revenue','/coverage']:
+        for route in ['/','/events','/datasets','/settings','/revenue','/coverage','/guide']:
             response=self.client.get(route)
             self.assertEqual(response.status_code,200)
             self.assertNotIn('SYNTHETIC_KEY_ONLY',response.text)
         self.post('/settings',dict(dry_run='on',retention_days='30',api_key='SYNTHETIC_PRIVATE_NEW'))
         self.assertTrue(self.store.settings()['dry_run'])
         self.assertNotIn('SYNTHETIC_PRIVATE_NEW',(self.store.root/'settings.json').read_text())
+
+    def test_missing_settings_explain_fields_and_retry_without_enabling_other_scopes(self):
+        event_id = self.add()
+        self.store.save_json('settings.json', {
+            **SETTINGS, 'dry_run': False, 'metadata_allowed': True,
+        })
+        with patch('genshin_research.web.YouTube', return_value=FakeAPI()) as api:
+            response = self.post('/events/' + event_id + '/metadata')
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('Tanggal tinjauan kebijakan', response.text)
+            self.assertIn('Referensi dasar penggunaan proyek', response.text)
+            self.assertIn('href="/settings"', response.text)
+            self.assertIn('href="/guide#pengaturan"', response.text)
+            self.assertNotIn('Document the requested', response.text)
+            # A valid 30-day retention must not be reported as a cause of this error.
+            self.assertNotIn('bilangan bulat 1–30', response.text)
+            api.assert_not_called()
+            self.assertFalse(self.app.extensions['jobs'].busy())
+            self.assertEqual(self.store.settings()['policy_reviewed_at'], '')
+
+            saved = self.post('/settings', dict(
+                metadata_allowed='on', retention_days='30',
+                policy_reviewed_at='2026-10-28', evidence_reference='SYNTHETIC REVIEW ONLY',
+            ))
+            self.assertEqual(saved.status_code, 302)
+            self.wait_job(self.post('/events/' + event_id + '/metadata'))
+            self.assertTrue(self.store.event(event_id)['api_verified_at_utc'])
+            self.assertFalse(self.store.settings()['collection_allowed'])
+
+            api.reset_mock()
+            blocked = self.post('/datasets/collect', {'mode': 'all'})
+            self.assertEqual(blocked.status_code, 400)
+            self.assertIn('Kumpulkan komentar utama', blocked.text)
+            self.assertNotIn('Isi &#34;Tanggal tinjauan kebijakan&#34;', blocked.text)
+            api.assert_not_called()
+
+    def test_offline_and_invalid_retention_report_actual_causes_without_network(self):
+        event_id = self.add()
+        self.store.save_json('settings.json', {
+            **self.store.settings(), 'dry_run': True, 'retention_days': 0,
+        })
+        with patch('genshin_research.web.YouTube') as api:
+            response = self.post('/events/' + event_id + '/metadata')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Offline / dry-run masih aktif', response.text)
+        self.assertIn('Masa simpan data / retensi (hari)', response.text)
+        self.assertIn('bukan jumlah hari komentar', response.text)
+        self.assertNotIn('Isi &#34;Tanggal tinjauan kebijakan&#34;', response.text)
+        self.assertNotIn('Operasi &#34;Baca metadata YouTube&#34; belum', response.text)
+        api.assert_not_called()
+
+    def test_in_app_guide_explains_first_collection_and_preserves_offline_mode(self):
+        self.store.save_json('settings.json', SETTINGS)
+        page = self.client.get('/guide')
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('id="pengaturan"', page.text)
+        self.assertIn('Semua event included (boleh untuk uji kecil)', page.text)
+        self.assertIn('bukan 100 komentar total', page.text)
+        self.assertIn('href="/events"', page.text)
+        self.assertIn('href="/settings"', page.text)
+        self.assertTrue(self.store.settings()['dry_run'])
 
     def test_full_crud_collection_nlp_annotation_and_analysis(self):
         event_id=self.add()
