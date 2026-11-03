@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime,timezone
 from genshin_research.collection import collect_event,eligibility
-from genshin_research.analysis import aggregate,pair_months,forecast,next_month,validate_revenue
+from genshin_research.analysis import aggregate, aggregate_event_months, pair_months, pair_events,forecast, forecast_event_driven, next_month, validate_revenue
 from genshin_research.sentiment import normalize,annotation_sample,evaluate,infer
 
 START='2026-03-01T00:00:00Z'
@@ -116,3 +116,123 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(result['actual_pair_count'],3)
         self.assertAlmostEqual(result['spearman_rho'],-1)
         self.assertEqual(spearman(pairs[:2])['status'],'insufficient_or_constant_data')
+
+
+    def test_event_month_uses_publication_month(self):
+        events = [
+            {
+                **EVENT,
+                "event_id": "EVENT_A",
+                "video_published_at_utc": "2026-03-31T00:00:00Z",
+            },
+            {
+                **EVENT,
+                "event_id": "EVENT_B",
+                "video_published_at_utc": "2026-05-15T00:00:00Z",
+            },
+        ]
+
+        comments = [
+            dict(
+                comment_id="C1",
+                event_id="EVENT_A",
+                eligibility_status="eligible",
+                sentiment="positive",
+            ),
+            dict(
+                comment_id="C2",
+                event_id="EVENT_B",
+                eligibility_status="eligible",
+                sentiment="negative",
+            ),
+        ]
+
+        monthly = aggregate_event_months(events, comments)
+
+        # Event 31 Maret tetap masuk Maret,
+        # meskipun jendela 72 jam berakhir pada April.
+        self.assertEqual(
+            [row["month"] for row in monthly],
+            ["2026-03", "2026-05"],
+        )
+
+        pairs, coverage = pair_events(
+            monthly,
+            [
+                revenue("2026-04"),
+                revenue("2026-06"),
+            ],
+            datetime(2026, 10, 26, tzinfo=timezone.utc),
+        )
+
+        self.assertEqual(
+            [row["revenue_month"] for row in pairs],
+            ["2026-04", "2026-06"],
+        )
+
+        self.assertEqual(len(pairs), 2)
+        self.assertTrue(all(r["status"] == "paired" for r in coverage))
+
+
+    def test_event_driven_forecast_allows_missing_months(self):
+        event_months = [
+            "2025-01",
+            "2025-03",
+            "2025-04",
+            "2025-06",
+            "2025-08",
+            "2025-09",
+            "2026-01",
+            "2026-07",
+        ]
+
+        pairs = []
+        monthly = []
+
+        for i, month in enumerate(event_months, start=1):
+            target = next_month(month)
+            sentiment = i / 20
+
+            pairs.append(
+                dict(
+                    month=month,
+                    net_sentiment=sentiment,
+                    revenue_month=target,
+                    revenue_usd=100 + i * 10,
+                    available_at_utc=(
+                        next_month(target) + "-01T00:00:00Z"
+                    ),
+                )
+            )
+
+            monthly.append(
+                dict(
+                    month=month,
+                    net_sentiment=sentiment,
+                )
+            )
+
+        # Pastikan memang terdapat gap kalender.
+        self.assertTrue(
+            any(
+                next_month(a["month"]) != b["month"]
+                for a, b in zip(pairs, pairs[1:])
+            )
+        )
+
+        result = forecast_event_driven(
+            monthly,
+            pairs,
+            datetime(2026, 10, 26, tzinfo=timezone.utc),
+            discovery_complete=True,
+        )
+
+        self.assertNotEqual(result["status"], "blocked")
+
+        self.assertFalse(
+            any("gap" in reason.lower() for reason in result["reasons"])
+        )
+
+        self.assertGreaterEqual(len(result["folds"]), 3)
+
+        self.assertEqual(result["mode"], "event_driven")

@@ -128,6 +128,79 @@ def aggregate(events, comments, hours=72):
     return output
 
 
+def aggregate_event_months(events, comments):
+    """
+    Aggregate sentiment by the calendar month in which
+    the official event video was published.
+
+    Unlike aggregate(), this does not shift an event into
+    the next month when its 72-hour window crosses a boundary.
+    """
+    groups = defaultdict(lambda: dict(events=set(), comments=[]))
+    event_month = {}
+
+    for event in events:
+        event_id = event["event_id"]
+
+        if event_id in event_month:
+            raise ValueError("Event ID duplikat pada input analisis.")
+
+        month = utc(event["video_published_at_utc"]).strftime("%Y-%m")
+
+        event_month[event_id] = month
+        groups[month]["events"].add(event_id)
+
+    seen = set()
+
+    for row in comments:
+        if row["comment_id"] in seen:
+            raise ValueError("ID komentar duplikat pada input analisis.")
+
+        seen.add(row["comment_id"])
+
+        if row["event_id"] not in event_month:
+            raise ValueError(
+                "Komentar tidak cocok dengan snapshot event."
+            )
+
+        if (
+            row["eligibility_status"] == "eligible"
+            and row.get("sentiment") in LABELS
+        ):
+            month = event_month[row["event_id"]]
+            groups[month]["comments"].append(row)
+
+    output = []
+
+    for month, group in sorted(groups.items()):
+        n = len(group["comments"])
+
+        result = {
+            "month": month,
+            "event_count": len(group["events"]),
+            "comment_count": n,
+        }
+
+        for label in LABELS:
+            result[label + "_proportion"] = (
+                sum(
+                    c["sentiment"] == label
+                    for c in group["comments"]
+                ) / n
+                if n else None
+            )
+
+        result["net_sentiment"] = (
+            result["positive_proportion"]
+            - result["negative_proportion"]
+            if n else None
+        )
+
+        output.append(result)
+
+    return output
+
+
 def pair_months(monthly, revenue, as_of=None):
     as_of = as_of or datetime.now(timezone.utc)
     validate_revenue(revenue)
@@ -160,6 +233,17 @@ def pair_months(monthly, revenue, as_of=None):
                 }
             )
     return pairs, coverage
+
+
+def pair_events(event_monthly, revenue, as_of=None):
+    """
+    Pair event-month sentiment with the following
+    calendar month's revenue.
+
+    Missing event months are allowed. Revenue availability,
+    completeness, and provenance validation are preserved.
+    """
+    return pair_months(event_monthly, revenue, as_of)
 
 
 def spearman(pairs):
@@ -210,7 +294,13 @@ def scatter(pairs, path):
     plt.close(fig)
 
 
-def forecast(monthly, pairs, as_of=None, discovery_complete=False):
+def forecast(
+    monthly,
+    pairs,
+    as_of=None,
+    discovery_complete=False,
+    require_contiguous=True,
+):
     """Experimental Ridge, chronological hindcast and naive baseline; never random CV."""
     from sklearn.linear_model import Ridge
     from sklearn.metrics import mean_absolute_error
@@ -249,7 +339,10 @@ def forecast(monthly, pairs, as_of=None, discovery_complete=False):
         result["reasons"].append(
             "Forecast memerlukan available_at_utc revenue yang terdokumentasi; tanggal retrieval tidak menggantikannya."
         )
-    if any(next_month(a["month"]) != b["month"] for a, b in zip(ordered, ordered[1:])):
+    if require_contiguous and any(
+        next_month(a["month"]) != b["month"]
+        for a, b in zip(ordered, ordered[1:])
+    ):
         result["reasons"].append(
             "Pasangan bulanan harus berurutan tanpa gap untuk eksperimen ini."
         )
@@ -342,4 +435,36 @@ def forecast(monthly, pairs, as_of=None, discovery_complete=False):
         ),
         naive_revenue_usd=ordered[-1]["revenue_usd"],
     )
+    return result
+
+
+def forecast_event_driven(
+    event_monthly,
+    pairs,
+    as_of=None,
+    discovery_complete=False,
+):
+    """
+    Event-driven forecasting.
+
+    Reuses the existing Ridge model, chronological hindcast,
+    data-availability checks, and naive baseline.
+
+    Only the consecutive-calendar-month requirement is disabled.
+    """
+    result = forecast(
+        monthly=event_monthly,
+        pairs=pairs,
+        as_of=as_of,
+        discovery_complete=discovery_complete,
+        require_contiguous=False,
+    )
+
+    result["mode"] = "event_driven"
+    result["warning"] += (
+        " Event-driven mode menggunakan bulan publikasi event "
+        "sebagai dasar pengelompokan sentimen. Bulan tanpa event "
+        "tidak dianggap memiliki sentimen nol."
+    )
+
     return result
