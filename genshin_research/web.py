@@ -794,15 +794,13 @@ def create_app(data_dir="data/workbench"):
     def run_event_driven_forecast(run_id):
         allowed("derived_analysis_allowed")
         allowed("external_join_allowed")
-        require_predictions(run_id)
+        manifest = require_predictions(run_id)
 
         path = store.run_path(run_id)
         evaluation_path = path / "evaluation.json"
 
         if not evaluation_path.exists():
-            raise ValueError(
-                "Lakukan evaluasi label manual sebelum forecasting."
-            )
+            raise ValueError("Lakukan evaluasi label manual sebelum forecasting.")
 
         revenue_path = store.root / "revenue.csv"
 
@@ -821,19 +819,17 @@ def create_app(data_dir="data/workbench"):
             not report["issues"]
             and not report["pending_events"]
             and all(
-                value == "completed"
-                for value in report["discovery_by_month"].values()
+                value == "completed" for value in report["discovery_by_month"].values()
             )
         )
 
         def work(progress):
-            progress(
-                "Mengagregasi sentimen berdasarkan bulan publikasi event..."
-            )
+            progress("Mengagregasi sentimen berdasarkan bulan publikasi event...")
 
-            event_monthly = aggregate_event_months(
+            event_monthly = aggregate(
                 rows_for_run(run_id, "events.csv"),
                 rows_for_run(run_id, "predictions.csv"),
+                manifest["window_hours"],
             )
 
             event_pairs, event_coverage = pair_events(

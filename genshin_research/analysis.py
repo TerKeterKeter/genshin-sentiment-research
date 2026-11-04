@@ -159,14 +159,9 @@ def aggregate_event_months(events, comments):
         seen.add(row["comment_id"])
 
         if row["event_id"] not in event_month:
-            raise ValueError(
-                "Komentar tidak cocok dengan snapshot event."
-            )
+            raise ValueError("Komentar tidak cocok dengan snapshot event.")
 
-        if (
-            row["eligibility_status"] == "eligible"
-            and row.get("sentiment") in LABELS
-        ):
+        if row["eligibility_status"] == "eligible" and row.get("sentiment") in LABELS:
             month = event_month[row["event_id"]]
             groups[month]["comments"].append(row)
 
@@ -183,17 +178,13 @@ def aggregate_event_months(events, comments):
 
         for label in LABELS:
             result[label + "_proportion"] = (
-                sum(
-                    c["sentiment"] == label
-                    for c in group["comments"]
-                ) / n
-                if n else None
+                sum(c["sentiment"] == label for c in group["comments"]) / n
+                if n
+                else None
             )
 
         result["net_sentiment"] = (
-            result["positive_proportion"]
-            - result["negative_proportion"]
-            if n else None
+            result["positive_proportion"] - result["negative_proportion"] if n else None
         )
 
         output.append(result)
@@ -340,8 +331,7 @@ def forecast(
             "Forecast memerlukan available_at_utc revenue yang terdokumentasi; tanggal retrieval tidak menggantikannya."
         )
     if require_contiguous and any(
-        next_month(a["month"]) != b["month"]
-        for a, b in zip(ordered, ordered[1:])
+        next_month(a["month"]) != b["month"] for a, b in zip(ordered, ordered[1:])
     ):
         result["reasons"].append(
             "Pasangan bulanan harus berurutan tanpa gap untuk eksperimen ini."
