@@ -2,6 +2,8 @@
 
 Semua pekerjaan sehari-hari dilakukan lewat browser. Terminal hanya untuk instalasi dan menyalakan server.
 
+Baru pertama mencoba? Ikuti [panduan langkah demi langkah untuk teman](PANDUAN_TEMAN.md), termasuk penjelasan pesan pengaturan pada screenshot. Panduan ringkas juga tersedia pada menu **Panduan untuk teman** di aplikasi.
+
 ## 1. Instalasi
 
 1. Unduh [branch proyek](https://github.com/TerKeterKeter/genshin-sentiment-research/tree/feat/offline-research-foundation) melalui Code → Download ZIP. Ekstrak ke folder lokal. Jika mengganti versi lama, simpan cadangan data/ dan konfigurasi privat dengan mengikuti retensinya.
@@ -32,7 +34,9 @@ Default **Offline / dry-run** aktif. Kamu tetap dapat mengelola kandidat dan dat
 
 Aktifkan secara terpisah. Checkbox mencatat scope penggunaan yang didokumentasikan, bukan pemberian izin dari platform. API key, status akademik, atau jawaban chatbot tidak otomatis menjadi dasar seluruh penggunaan turunan. Kode lengkap tetap dapat diuji dengan fixture sintetis tanpa pengumpulan data nyata.
 
-Retensi 1–30 hari berlaku untuk paket yang masih mengandung teks. Memperpendek retensi juga memperpendek batas data yang ada; menggantinya ke angka lebih besar tidak memperpanjang expiry lama.
+**Masa simpan data / retensi (hari)** adalah batas penyimpanan paket, bukan jendela komentar. Misalnya 30 berarti paket disimpan paling lama 30 hari sejak dibuat, sedangkan jendela komentar tetap 72 jam. Memperpendek retensi juga memperpendek batas data yang ada; menggantinya ke angka lebih besar tidak memperpanjang expiry lama.
+
+Jika muncul **Pengaturan penggunaan data belum lengkap**, baca butir pada halaman error, klik **Buka Pengaturan & API**, lengkapi bagian yang berlaku, lalu **Simpan pengaturan** dan ulangi langkahnya. Versi lama menampilkan pesan gabungan `Document the requested data-use scope and policy review; packages require retention of 1-30 days`; pesan itu tidak menentukan kolom mana yang salah. Tanggal tinjauan adalah tanggal pemeriksaan ketentuan oleh peneliti, dan referensi berisi sumber/rujukan serta cakupan penggunaan yang benar-benar ditinjau. Jangan mengarang persetujuan untuk mengisi form.
 
 ## 4. CRUD kandidat lewat browser
 

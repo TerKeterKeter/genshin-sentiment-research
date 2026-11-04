@@ -2,7 +2,7 @@
 
 Aplikasi web lokal untuk penelitian mahasiswa: CRUD kandidat Short, verifikasi manusia, pengumpulan komentar YouTube, sentimen pretrained lokal, anotasi/evaluasi, hubungan dengan revenue bulanan, dan forecasting sederhana **eksperimental**.
 
-**[Panduan penggunaan lengkap](docs/USER_GUIDE.md)** · **[Metodologi dan batasan](docs/METHODOLOGY.md)** · **[Checklist uji teman](docs/TESTING.md)**
+**[Mulai di sini: panduan teman](docs/PANDUAN_TEMAN.md)** · **[Panduan penggunaan lengkap](docs/USER_GUIDE.md)** · **[Metodologi dan batasan](docs/METHODOLOGY.md)** · **[Checklist uji teman](docs/TESTING.md)**
 
 Hanya Shorts kanal resmi **@GenshinImpact** yang diverifikasi manual sebagai pengumuman awal/drip marketing karakter. Kandidat Januari 2026–September 2026; periode final ditentukan audit. Teaser/demo tidak menggantikan event yang hilang. Waktu pengumuman awal lintas platform dipisahkan dari publikasi Short. API metadata tidak membuktikan format Shorts atau status drip: perlu bukti manual.
 
@@ -16,6 +16,8 @@ python run.py
 Instalasi pertama memasang PyTorch CPU dan dependensi; membutuhkan internet serta ruang disk beberapa GB. Buka `http://127.0.0.1:5000` di browser pada komputer yang sama. Pada Windows, setelah instalasi, aplikasi juga dapat dijalankan dengan klik ganda **run.bat**. Terminal server tetap dibuka; Ctrl+C menghentikannya. Jika port terpakai: `python run.py --port 5001`.
 
 **Tidak perlu mengetik link satu per satu di PowerShell.** Gunakan halaman Kandidat & verifikasi di browser. API key diisi pada Pengaturan & API, hanya tersimpan di memori server; jangan menaruh key di Git, CSV atau chat. Environment `YOUTUBE_API_KEY` tetap didukung. `.env` tidak dimuat otomatis.
+
+Menu **Panduan untuk teman** menjelaskan pengisian pengaturan, input link, verifikasi manusia, dan pengambilan komentar otomatis. Jika langkah diblokir, halaman error menunjukkan pengaturan yang belum lengkap dan tombol langsung ke Pengaturan & API. **Retensi 1–30 hari** adalah batas penyimpanan paket data; **jendela 72 jam** menentukan komentar yang dianalisis.
 
 ## Alur aplikasi
 

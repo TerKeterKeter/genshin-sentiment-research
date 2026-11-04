@@ -72,13 +72,74 @@ class WebTests(unittest.TestCase):
 
     def test_csrf_default_modes_and_key_never_persisted(self):
         self.assertEqual(self.client.post('/events',data={'link':'anything'}).status_code,400)
-        for route in ['/','/events','/datasets','/settings','/revenue','/coverage']:
+        for route in ['/','/events','/datasets','/settings','/revenue','/coverage','/guide']:
             response=self.client.get(route)
             self.assertEqual(response.status_code,200)
             self.assertNotIn('SYNTHETIC_KEY_ONLY',response.text)
         self.post('/settings',dict(dry_run='on',retention_days='30',api_key='SYNTHETIC_PRIVATE_NEW'))
         self.assertTrue(self.store.settings()['dry_run'])
         self.assertNotIn('SYNTHETIC_PRIVATE_NEW',(self.store.root/'settings.json').read_text())
+
+    def test_missing_settings_explain_fields_and_retry_without_enabling_other_scopes(self):
+        event_id = self.add()
+        self.store.save_json('settings.json', {
+            **SETTINGS, 'dry_run': False, 'metadata_allowed': True,
+        })
+        with patch('genshin_research.web.YouTube', return_value=FakeAPI()) as api:
+            response = self.post('/events/' + event_id + '/metadata')
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('Tanggal tinjauan kebijakan', response.text)
+            self.assertIn('Referensi dasar penggunaan proyek', response.text)
+            self.assertIn('href="/settings"', response.text)
+            self.assertIn('href="/guide#pengaturan"', response.text)
+            self.assertNotIn('Document the requested', response.text)
+            # A valid 30-day retention must not be reported as a cause of this error.
+            self.assertNotIn('bilangan bulat 1–30', response.text)
+            api.assert_not_called()
+            self.assertFalse(self.app.extensions['jobs'].busy())
+            self.assertEqual(self.store.settings()['policy_reviewed_at'], '')
+
+            saved = self.post('/settings', dict(
+                metadata_allowed='on', retention_days='30',
+                policy_reviewed_at='2026-10-28', evidence_reference='SYNTHETIC REVIEW ONLY',
+            ))
+            self.assertEqual(saved.status_code, 302)
+            self.wait_job(self.post('/events/' + event_id + '/metadata'))
+            self.assertTrue(self.store.event(event_id)['api_verified_at_utc'])
+            self.assertFalse(self.store.settings()['collection_allowed'])
+
+            api.reset_mock()
+            blocked = self.post('/datasets/collect', {'mode': 'all'})
+            self.assertEqual(blocked.status_code, 400)
+            self.assertIn('Kumpulkan komentar utama', blocked.text)
+            self.assertNotIn('Isi &#34;Tanggal tinjauan kebijakan&#34;', blocked.text)
+            api.assert_not_called()
+
+    def test_offline_and_invalid_retention_report_actual_causes_without_network(self):
+        event_id = self.add()
+        self.store.save_json('settings.json', {
+            **self.store.settings(), 'dry_run': True, 'retention_days': 0,
+        })
+        with patch('genshin_research.web.YouTube') as api:
+            response = self.post('/events/' + event_id + '/metadata')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Offline / dry-run masih aktif', response.text)
+        self.assertIn('Masa simpan data / retensi (hari)', response.text)
+        self.assertIn('bukan jumlah hari komentar', response.text)
+        self.assertNotIn('Isi &#34;Tanggal tinjauan kebijakan&#34;', response.text)
+        self.assertNotIn('Operasi &#34;Baca metadata YouTube&#34; belum', response.text)
+        api.assert_not_called()
+
+    def test_in_app_guide_explains_first_collection_and_preserves_offline_mode(self):
+        self.store.save_json('settings.json', SETTINGS)
+        page = self.client.get('/guide')
+        self.assertEqual(page.status_code, 200)
+        self.assertIn('id="pengaturan"', page.text)
+        self.assertIn('Semua event included (boleh untuk uji kecil)', page.text)
+        self.assertIn('bukan 100 komentar total', page.text)
+        self.assertIn('href="/events"', page.text)
+        self.assertIn('href="/settings"', page.text)
+        self.assertTrue(self.store.settings()['dry_run'])
 
     def test_full_crud_collection_nlp_annotation_and_analysis(self):
         event_id=self.add()
@@ -150,3 +211,135 @@ class WebTests(unittest.TestCase):
             verification_notes='SYNTHETIC REVIEW'))
         self.assertEqual(response.status_code,302)
         self.assertEqual(self.store.event(event_id)['inclusion_status'],'no_matching_short')
+        
+
+    def test_event_driven_route_saves_artifacts_and_revenue_update_invalidates_them(self):
+        from genshin_research.analysis import REVENUE_FIELDS
+        from genshin_research.core import read_csv
+
+        # Buat event sintetis yang jendela 72 jamnya berakhir pada April.
+        event_id = self.add()
+        self.store.update_event(
+            event_id,
+            {"video_published_at_utc": "2026-03-31T00:00:00Z"},
+        )
+
+        event = self.store.event(event_id)
+        run_id = self.store.new_run([event], synthetic=True)
+
+        # Siapkan dataset yang memenuhi prasyarat route.
+        manifest = self.store.manifest(run_id)
+        manifest.update(
+            collection_complete=True,
+            nlp_complete=True,
+        )
+        self.store.save_json(f"runs/{run_id}/manifest.json", manifest)
+
+        predictions = [
+            {
+                "comment_id": "SYNTHETIC_COMMENT_1",
+                "event_id": event_id,
+                "eligibility_status": "eligible",
+                "sentiment": "positive",
+            },
+            {
+                "comment_id": "SYNTHETIC_COMMENT_2",
+                "event_id": event_id,
+                "eligibility_status": "eligible",
+                "sentiment": "negative",
+            },
+        ]
+
+        self.store.save_csv(
+            f"runs/{run_id}/predictions.csv",
+            predictions,
+            [
+                "comment_id",
+                "event_id",
+                "eligibility_status",
+                "sentiment",
+            ],
+        )
+
+        self.store.save_json(
+            f"runs/{run_id}/evaluation.json",
+            {"status": "synthetic_test"},
+        )
+
+        # Revenue sintetis bulan Mei, target dari agregasi April.
+        revenue = {
+            "month": "2026-05",
+            "revenue_usd": "100",
+            "platform_scope": "mobile_estimate",
+            "region_scope": "global",
+            "cn_android_included": "false",
+            "cn_android_multiplier": "",
+            "source_url": "https://example.com/synthetic-revenue",
+            "retrieved_at": "2026-06-03",
+            "revision_notes": "SYNTHETIC TEST DATA",
+            "available_at_utc": "2026-06-02T00:00:00Z",
+        }
+
+        self.store.save_csv(
+            "revenue.csv",
+            [revenue],
+            REVENUE_FIELDS,
+        )
+
+        fake_forecast = {
+            "status": "blocked",
+            "mode": "event_driven",
+            "warning": "Synthetic integration test only.",
+            "reasons": ["Synthetic test result."],
+            "folds": [],
+        }
+
+        with patch(
+            "genshin_research.web.forecast_event_driven",
+            return_value=fake_forecast,
+        ) as forecast_mock:
+            self.wait_job(
+                self.post(f"/datasets/{run_id}/forecast-event-driven")
+            )
+
+        forecast_mock.assert_called_once()
+
+        run_path = self.store.run_path(run_id)
+
+        # Pastikan semua hasil Event-Driven dibuat.
+        event_files = [
+            "event_monthly.csv",
+            "event_pairs.csv",
+            "event_coverage.csv",
+            "event_forecast.json",
+        ]
+
+        for filename in event_files:
+            self.assertTrue(
+                (run_path / filename).exists(),
+                f"{filename} seharusnya dibuat.",
+            )
+
+        # 31 Maret + 72 jam masuk April, lalu dipasangkan ke revenue Mei.
+        monthly = read_csv(run_path / "event_monthly.csv")
+        pairs = read_csv(run_path / "event_pairs.csv")
+
+        self.assertEqual([row["month"] for row in monthly], ["2026-04"])
+        self.assertEqual([row["revenue_month"] for row in pairs], ["2026-05"])
+        self.assertEqual(len(pairs), 1)
+
+        # Perubahan revenue harus menghapus seluruh hasil Event-Driven lama.
+        updated_revenue = {
+            **revenue,
+            "revenue_usd": "125",
+        }
+
+        response = self.post("/revenue", updated_revenue)
+        self.assertEqual(response.status_code, 302)
+
+        for filename in event_files:
+            self.assertFalse(
+                (run_path / filename).exists(),
+                f"{filename} seharusnya dihapus setelah revenue berubah.",
+            )
+

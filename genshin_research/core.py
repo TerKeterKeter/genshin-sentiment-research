@@ -26,21 +26,72 @@ def write_csv(path, rows, fields=None):
         writer.writerows(rows)
 
 
-def authorize(config, permissions, operation):
+OPERATION_LABELS = {
+    "metadata_allowed": "Baca metadata YouTube",
+    "collection_allowed": "Kumpulkan komentar utama",
+    "derived_analysis_allowed": "Analisis sentimen dan evaluasi data nyata",
+    "external_join_allowed": "Gabungkan agregat dengan revenue eksternal",
+}
+
+
+class DataUseSettingsError(PermissionError):
+    """Missing project settings, shown as a checklist in the browser."""
+
+    def __init__(self, requirements):
+        self.requirements = requirements
+        super().__init__(
+            "Pengaturan penggunaan data belum lengkap. " + " ".join(requirements)
+        )
+
+
+def authorization_requirements(config, permissions, operation):
+    """Explain each unmet setting without changing or granting any scope."""
+    missing = []
     if config["dry_run"]:
-        raise PermissionError("Real-data operation disabled in dry-run mode")
+        missing.append(
+            "Mode Offline / dry-run masih aktif. Nonaktifkan hanya jika dasar "
+            "penggunaan untuk langkah ini sudah diperiksa."
+        )
+    if not permissions.get(operation):
+        label = OPERATION_LABELS.get(operation, operation)
+        missing.append(
+            f'Operasi "{label}" belum diaktifkan. Centang hanya jika langkah '
+            "tersebut tercakup dalam dasar penggunaan proyek."
+        )
+    reviewed_at = str(permissions.get("policy_reviewed_at") or "").strip()
+    reference = str(permissions.get("evidence_reference") or "").strip()
+    if not reviewed_at:
+        missing.append(
+            'Isi "Tanggal tinjauan kebijakan" dengan tanggal ketika peneliti '
+            "memeriksa ketentuan penggunaan yang berlaku."
+        )
+    if not reference:
+        missing.append(
+            'Isi "Referensi dasar penggunaan proyek" dengan sumber/rujukan '
+            "yang benar-benar diperiksa, operasi yang dicakup, dan batasannya."
+        )
     if (
         permissions.get("policy_review_status") != "documented"
-        or not permissions.get("evidence_reference")
-        or not permissions.get("policy_reviewed_at")
-        or not permissions.get(operation)
-        or not isinstance(permissions.get("retention_days"), int)
-        or isinstance(permissions["retention_days"], bool)
-        or not 0 < permissions["retention_days"] <= 30
+        and reviewed_at
+        and reference
     ):
-        raise PermissionError(
-            "Document the requested data-use scope and policy review; packages require retention of 1-30 days"
+        missing.append(
+            "Tinjauan penggunaan belum tercatat lengkap. Periksa tanggal dan "
+            "referensi pada Pengaturan & API, lalu klik Simpan pengaturan."
         )
+    retention = permissions.get("retention_days")
+    if type(retention) is not int or not 1 <= retention <= 30:
+        missing.append(
+            'Isi "Masa simpan data / retensi (hari)" dengan bilangan bulat 1–30. '
+            "Ini batas penyimpanan paket data, bukan jumlah hari komentar yang diambil."
+        )
+    return missing
+
+
+def authorize(config, permissions, operation):
+    missing = authorization_requirements(config, permissions, operation)
+    if missing:
+        raise DataUseSettingsError(missing)
 
 
 def read_json(path):

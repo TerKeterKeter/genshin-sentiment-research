@@ -1,1 +1,49 @@
-{% extends 'base.html' %}{% block content %}<h1>Pengaturan & API</h1><p>Default aplikasi offline. Aktifkan hanya operasi yang dasar penggunaannya sudah kamu dokumentasikan.</p><form method="post"><section><h2>API key YouTube</h2><p>Status: <b>{{ 'tersedia di memori/environment' if key_present else 'belum tersedia' }}</b>. Nilai key tidak ditampilkan atau disimpan di disk.</p><label>Masukkan key untuk sesi server ini<input type="password" name="api_key" autocomplete="off" placeholder="Biarkan kosong untuk mempertahankan key yang ada"></label><label class="checkbox"><input type="checkbox" name="clear_key">Hapus key dari memori server</label><p class="muted">Key juga dapat disediakan sebagai environment YOUTUBE_API_KEY sebelum aplikasi dijalankan. Setelah server berhenti, key yang dimasukkan lewat form perlu diisi kembali.</p></section><section><h2>Mode & scope penggunaan</h2><label class="checkbox"><input type="checkbox" name="dry_run" {{ 'checked' if settings.dry_run else '' }}><b>Offline / dry-run</b> — blok semua pengambilan dan pemrosesan API Data nyata.</label>{% for field,label in [('metadata_allowed','Baca metadata YouTube'),('collection_allowed','Kumpulkan komentar utama'),('derived_analysis_allowed','Analisis sentimen dan evaluasi data nyata'),('external_join_allowed','Gabungkan agregat dengan revenue eksternal')] %}<label class="checkbox"><input type="checkbox" name="{{ field }}" {{ 'checked' if settings[field] else '' }}>{{ label }}</label>{% endfor %}<div class="form-grid"><label>Tanggal tinjauan kebijakan<input type="date" name="policy_reviewed_at" value="{{ settings.policy_reviewed_at }}"></label><label>Retensi paket (hari)<input type="number" name="retention_days" min="1" max="30" value="{{ settings.retention_days }}"></label><label class="wide">Referensi dasar penggunaan proyek<textarea name="evidence_reference" rows="3" placeholder="Rujukan persetujuan/ketentuan yang berlaku untuk proyek, scope dan pembatasannya">{{ settings.evidence_reference }}</textarea></label></div><p class="muted">Checkbox mencatat keputusan proyek, bukan memberi izin dari YouTube. Akses teknis berbeda dari izin membuat/menyimpan metrik turunan dan penggabungan eksternal. Retensi yang dipersingkat tidak memperpanjang data lama; paket kedaluwarsa dihapus otomatis ketika aplikasi aktif dan tidak ada job berjalan.</p><button>Simpan pengaturan</button></section></form><section><h2>Konfigurasi penelitian</h2><dl class="details"><dt>Periode kandidat</dt><dd>1 Januari — 30 September 2026 (publikasi UTC)</dd><dt>Jendela</dt><dd>72 jam, batas akhir eksklusif; komentar diedit pada/selepas cutoff dikeluarkan</dd><dt>Model lokal</dt><dd>{{ model.id }}</dd><dt>Revision tetap</dt><dd><code>{{ model.revision }}</code></dd><dt>Lisensi</dt><dd>{{ model.license }}</dd></dl><p>English; tiga kelas: negative, neutral, positive. Tidak ada fine-tuning. Model dilatih pada domain Twitter dan perlu evaluasi manual untuk YouTube.</p></section>{% endblock %}
+{% extends 'base.html' %}
+{% block content %}
+<h1>Pengaturan & API</h1>
+<p>Atur akses YouTube dan catat penggunaan data untuk proyek ini. <a href="{{ url_for('guide_page') }}#pengaturan">Baca panduan pengisian →</a></p>
+<div class="notice">API key adalah kunci teknis untuk menghubungi YouTube. Operasi, tanggal tinjauan, referensi penggunaan, dan masa simpan di bawah dicatat secara terpisah. Setelah mengubahnya, klik <b>Simpan pengaturan</b>.</div>
+<form method="post">
+  <section>
+    <h2>1. API key YouTube</h2>
+    <p>Status: <b>{{ 'tersedia di memori/environment' if key_present else 'belum tersedia' }}</b>. Nilai key tidak ditampilkan atau disimpan di disk.</p>
+    <label>Masukkan key untuk sesi server ini<input type="password" name="api_key" autocomplete="off" placeholder="Biarkan kosong untuk mempertahankan key yang ada"></label>
+    <label class="checkbox"><input type="checkbox" name="clear_key">Hapus key dari memori server</label>
+    <p class="muted">Gunakan key dari proyek yang mengaktifkan YouTube Data API v3. Key juga dapat disediakan sebagai environment YOUTUBE_API_KEY. Key yang dimasukkan lewat form perlu diisi kembali setelah server berhenti.</p>
+  </section>
+  <section>
+    <h2>2. Pilih operasi yang digunakan</h2>
+    <label class="checkbox"><input type="checkbox" name="dry_run" {{ 'checked' if settings.dry_run else '' }}><b>Offline / dry-run</b> — aktif berarti semua pengambilan dan pemrosesan data YouTube nyata diblokir.</label>
+    <p>Untuk mencoba data manual, biarkan offline aktif. Untuk menggunakan data nyata, nonaktifkan setelah dasar penggunaan diperiksa dan lengkapi catatan pada bagian 3. Aktifkan hanya operasi yang dicakup catatan tersebut.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Operasi</th><th>Dipakai untuk tombol / langkah</th></tr></thead>
+      <tbody>
+      {% for field,label,description in [
+        ('metadata_allowed','Baca metadata YouTube','Ambil / refresh metadata: judul, channel ID, waktu publikasi.'),
+        ('collection_allowed','Kumpulkan komentar utama','Mulai pengumpulan: mengambil komentar untuk kandidat included.'),
+        ('derived_analysis_allowed','Analisis sentimen dan evaluasi data nyata','Jalankan NLP lokal, anotasi, dan evaluasi model.'),
+        ('external_join_allowed','Gabungkan agregat dengan revenue eksternal','Analisis revenue t+1 dan forecast eksperimen, bersama operasi analisis sentimen.')
+      ] %}
+      <tr><td><label class="checkbox"><input type="checkbox" name="{{ field }}" {{ 'checked' if settings[field] else '' }}>{{ label }}</label></td><td>{{ description }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="muted">Untuk langkah metadata saja, operasi komentar, sentimen, dan penggabungan revenue tidak diperlukan.</p>
+  </section>
+  <section>
+    <h2>3. Catatan penggunaan dan masa simpan</h2>
+    <div class="form-grid">
+      <label>Tanggal tinjauan kebijakan<input type="date" name="policy_reviewed_at" value="{{ settings.policy_reviewed_at }}"><small>Tanggal peneliti benar-benar memeriksa ketentuan dan dasar penggunaan proyek; bukan tanggal video.</small></label>
+      <label>Masa simpan data / retensi (hari)<input type="number" name="retention_days" min="1" max="30" required value="{{ settings.retention_days }}"><small>Bilangan bulat 1–30. Misalnya 30 = paket data disimpan paling lama 30 hari sejak dibuat. Jendela komentar tetap 72 jam.</small></label>
+      <label class="wide">Referensi dasar penggunaan proyek<textarea name="evidence_reference" rows="5" placeholder="Sumber/URL atau dokumen yang benar-benar ditinjau; operasi yang dicakup; batas penggunaan dan penyimpanannya.">{{ settings.evidence_reference }}</textarea><small>Jika belum tahu dasar penggunaan yang berlaku, minta penanggung jawab penelitian meninjaunya. Jangan mengisi klaim persetujuan yang belum ada.</small></label>
+    </div>
+    <p class="muted">Checkbox dan catatan mendokumentasikan keputusan proyek, bukan memberikan izin dari YouTube. API key dan status akademik tidak otomatis membuktikan seluruh hak penggunaan turunan. Memperpendek retensi memperpendek batas data yang ada; memperbesarnya tidak memperpanjang tanggal kedaluwarsa lama. Paket kedaluwarsa dihapus ketika aplikasi aktif dan tidak ada proses berjalan. Ekspor/cadangan di luar aplikasi perlu dikelola sendiri.</p>
+    <button>Simpan pengaturan</button>
+  </section>
+</form>
+<section>
+  <h2>Konfigurasi penelitian</h2>
+  <dl class="details"><dt>Periode kandidat</dt><dd>1 Januari — 30 September 2026 (publikasi UTC)</dd><dt>Jendela</dt><dd>72 jam, batas akhir eksklusif; komentar diedit pada/selepas cutoff dikeluarkan</dd><dt>Model lokal</dt><dd>{{ model.id }}</dd><dt>Revision tetap</dt><dd><code>{{ model.revision }}</code></dd><dt>Lisensi</dt><dd>{{ model.license }}</dd></dl>
+  <p>English; tiga kelas: negative, neutral, positive. Tidak ada fine-tuning. Model dilatih pada domain Twitter dan perlu evaluasi manual untuk YouTube.</p>
+</section>
+{% endblock %}

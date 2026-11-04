@@ -23,14 +23,17 @@ from .analysis import (
     REVENUE_FIELDS,
     aggregate,
     forecast,
+    forecast_event_driven,
+    pair_events,
     pair_months,
     scatter,
     spearman,
     validate_revenue,
 )
+
 from .audit import STATUSES, audit
 from .collection import COMMENT_FIELDS, collect_event
-from .core import authorize, read_csv, read_json, utc
+from .core import DataUseSettingsError, authorize, read_csv, read_json, utc
 from .jobs import Jobs
 from .registry import video_id_from_input
 from .sentiment import (
@@ -103,7 +106,12 @@ def create_app(data_dir="data/workbench"):
         key = app.config["YOUTUBE_API_KEY"]
         if key:
             message = message.replace(key, "[REDACTED]")
-        return render_template("error.html", message=message), 400
+        requirements = (
+            error.requirements if isinstance(error, DataUseSettingsError) else []
+        )
+        return render_template(
+            "error.html", message=message, requirements=requirements
+        ), 400
 
     def allowed(operation):
         settings = store.settings()
@@ -131,6 +139,10 @@ def create_app(data_dir="data/workbench"):
             "analysis.json",
             "forecast.json",
             "scatter.png",
+            "event_monthly.csv",
+            "event_pairs.csv",
+            "event_coverage.csv",
+            "event_forecast.json",
         ]:
             (store.run_path(run_id) / filename).unlink(missing_ok=True)
 
@@ -141,6 +153,10 @@ def create_app(data_dir="data/workbench"):
         return render_template(
             "home.html", events=events, runs=store.runs(), report=report
         )
+
+    @app.get("/guide")
+    def guide_page():
+        return render_template("guide.html")
 
     @app.get("/events")
     def events_page():
@@ -432,7 +448,13 @@ def create_app(data_dir="data/workbench"):
             name: read_json(path / (name + ".json"))
             if (path / (name + ".json")).exists()
             else None
-            for name in ["exclusions", "evaluation", "analysis", "forecast"]
+            for name in [
+                "exclusions",
+                "evaluation",
+                "analysis",
+                "forecast",
+                "event_forecast",
+            ]
         }
         statuses = (
             read_json(path / "collection_status.json")
@@ -638,6 +660,10 @@ def create_app(data_dir="data/workbench"):
                     "pairs.csv",
                     "coverage.csv",
                     "scatter.png",
+                    "event_monthly.csv",
+                    "event_pairs.csv",
+                    "event_coverage.csv",
+                    "event_forecast.json",
                 ]:
                     (store.run_path(run["run_id"]) / filename).unlink(missing_ok=True)
             flash(
@@ -768,6 +794,111 @@ def create_app(data_dir="data/workbench"):
 
         return start("Forecasting eksperimental", work)
 
+    @app.post("/datasets/<run_id>/forecast-event-driven")
+    def run_event_driven_forecast(run_id):
+        allowed("derived_analysis_allowed")
+        allowed("external_join_allowed")
+        manifest = require_predictions(run_id)
+
+        path = store.run_path(run_id)
+        evaluation_path = path / "evaluation.json"
+
+        if not evaluation_path.exists():
+            raise ValueError("Lakukan evaluasi label manual sebelum forecasting.")
+
+        revenue_path = store.root / "revenue.csv"
+
+        if not revenue_path.exists():
+            raise ValueError("Data revenue belum tersedia.")
+
+        revenue = read_csv(revenue_path)
+
+        report = audit(
+            store.events(),
+            store.settings(),
+            read_csv(store.root / "coverage.csv"),
+        )
+
+        complete = (
+            not report["issues"]
+            and not report["pending_events"]
+            and all(
+                value == "completed" for value in report["discovery_by_month"].values()
+            )
+        )
+
+        def work(progress):
+            progress(
+                "Mengagregasi sentimen berdasarkan bulan berakhirnya jendela pengumpulan komentar..."
+            )
+            event_monthly = aggregate(
+                rows_for_run(run_id, "events.csv"),
+                rows_for_run(run_id, "predictions.csv"),
+                manifest["window_hours"],
+            )
+
+            event_pairs, event_coverage = pair_events(
+                event_monthly,
+                revenue,
+            )
+
+            monthly_fields = [
+                "month",
+                "event_count",
+                "comment_count",
+                "positive_proportion",
+                "negative_proportion",
+                "neutral_proportion",
+                "net_sentiment",
+            ]
+
+            pair_fields = monthly_fields + [
+                "revenue_month",
+                "revenue_usd",
+                "available_at_utc",
+            ]
+
+            store.save_csv(
+                f"runs/{run_id}/event_monthly.csv",
+                event_monthly,
+                monthly_fields,
+            )
+
+            store.save_csv(
+                f"runs/{run_id}/event_pairs.csv",
+                event_pairs,
+                pair_fields,
+            )
+
+            store.save_csv(
+                f"runs/{run_id}/event_coverage.csv",
+                event_coverage,
+            )
+
+            progress(
+                "Memeriksa kelayakan data dan menjalankan event-driven hindcast..."
+            )
+
+            result = forecast_event_driven(
+                event_monthly,
+                event_pairs,
+                discovery_complete=complete,
+            )
+
+            save_run_json(
+                run_id,
+                "event_forecast.json",
+                result,
+            )
+
+            return (
+                f"Event-driven forecasting selesai: "
+                f"{len(event_pairs)} pasangan event-revenue. "
+                f"Status: {result['status']}."
+            )
+
+        return start("Forecasting event-driven", work)
+
     @app.get("/datasets/<run_id>/files/<filename>")
     def run_file(run_id, filename):
         allowed_files = {
@@ -786,6 +917,10 @@ def create_app(data_dir="data/workbench"):
             "forecast.json",
             "scatter.png",
             "revenue.csv",
+            "event_monthly.csv",
+            "event_pairs.csv",
+            "event_coverage.csv",
+            "event_forecast.json",
         }
         if filename not in allowed_files:
             abort(404)

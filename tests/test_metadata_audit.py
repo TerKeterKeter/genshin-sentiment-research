@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock
 from genshin_research.metadata_audit import verify_metadata, save_metadata_package
-from genshin_research.core import authorize
+from genshin_research.core import DataUseSettingsError, authorize
 
 
 class MetadataAuditTests(unittest.TestCase):
@@ -48,3 +48,15 @@ class MetadataAuditTests(unittest.TestCase):
                     save_metadata_package({}, 'data/invalid', 31)
             finally:
                 os.chdir(old)
+
+    def test_retention_cannot_be_bypassed_with_boolean_or_numeric_string(self):
+        permissions = dict(
+            policy_review_status='documented', evidence_reference='SYNTHETIC_SCOPE',
+            policy_reviewed_at='2026-10-28', metadata_allowed=True,
+        )
+        for value in [None, True, False, '30', 0, 31, 1.5]:
+            with self.subTest(retention=value):
+                with self.assertRaises(DataUseSettingsError) as result:
+                    authorize({'dry_run': False}, {**permissions, 'retention_days': value}, 'metadata_allowed')
+                self.assertEqual(len(result.exception.requirements), 1)
+                self.assertIn('retensi', result.exception.requirements[0])
