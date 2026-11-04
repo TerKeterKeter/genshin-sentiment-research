@@ -452,8 +452,8 @@ def forecast_event_driven(
 
     result["mode"] = "event_driven"
     result["warning"] += (
-        " Event-driven mode menggunakan bulan publikasi event "
-        "sebagai dasar pengelompokan sentimen. Bulan tanpa event "
+        " Event-driven mode mengelompokkan sentimen berdasarkan bulan "
+        "berakhirnya jendela pengumpulan komentar. Bulan tanpa event "
         "tidak dianggap memiliki sentimen nol."
     )
 

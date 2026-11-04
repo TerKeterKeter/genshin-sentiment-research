@@ -110,9 +110,10 @@
     <pre>{{ reports.event_forecast|tojson(indent=2) }}</pre>
 
     <p class="muted">
-        Metode ini menggunakan bulan publikasi event sebagai dasar
-        pengelompokan sentimen. Gap bulan tanpa event tidak menjadi
-        alasan otomatis untuk memblokir model.
+        Metode ini mengelompokkan sentimen berdasarkan bulan berakhirnya
+        jendela pengumpulan komentar (sesuai durasi pengumpulan yang digunakan).
+        Bulan tanpa event tidak diisi dengan sentimen nol dan tidak otomatis
+        memblokir model.
     </p>
 </section>
 {% endif %}

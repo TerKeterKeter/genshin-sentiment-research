@@ -211,3 +211,135 @@ class WebTests(unittest.TestCase):
             verification_notes='SYNTHETIC REVIEW'))
         self.assertEqual(response.status_code,302)
         self.assertEqual(self.store.event(event_id)['inclusion_status'],'no_matching_short')
+        
+
+    def test_event_driven_route_saves_artifacts_and_revenue_update_invalidates_them(self):
+        from genshin_research.analysis import REVENUE_FIELDS
+        from genshin_research.core import read_csv
+
+        # Buat event sintetis yang jendela 72 jamnya berakhir pada April.
+        event_id = self.add()
+        self.store.update_event(
+            event_id,
+            {"video_published_at_utc": "2026-03-31T00:00:00Z"},
+        )
+
+        event = self.store.event(event_id)
+        run_id = self.store.new_run([event], synthetic=True)
+
+        # Siapkan dataset yang memenuhi prasyarat route.
+        manifest = self.store.manifest(run_id)
+        manifest.update(
+            collection_complete=True,
+            nlp_complete=True,
+        )
+        self.store.save_json(f"runs/{run_id}/manifest.json", manifest)
+
+        predictions = [
+            {
+                "comment_id": "SYNTHETIC_COMMENT_1",
+                "event_id": event_id,
+                "eligibility_status": "eligible",
+                "sentiment": "positive",
+            },
+            {
+                "comment_id": "SYNTHETIC_COMMENT_2",
+                "event_id": event_id,
+                "eligibility_status": "eligible",
+                "sentiment": "negative",
+            },
+        ]
+
+        self.store.save_csv(
+            f"runs/{run_id}/predictions.csv",
+            predictions,
+            [
+                "comment_id",
+                "event_id",
+                "eligibility_status",
+                "sentiment",
+            ],
+        )
+
+        self.store.save_json(
+            f"runs/{run_id}/evaluation.json",
+            {"status": "synthetic_test"},
+        )
+
+        # Revenue sintetis bulan Mei, target dari agregasi April.
+        revenue = {
+            "month": "2026-05",
+            "revenue_usd": "100",
+            "platform_scope": "mobile_estimate",
+            "region_scope": "global",
+            "cn_android_included": "false",
+            "cn_android_multiplier": "",
+            "source_url": "https://example.com/synthetic-revenue",
+            "retrieved_at": "2026-06-03",
+            "revision_notes": "SYNTHETIC TEST DATA",
+            "available_at_utc": "2026-06-02T00:00:00Z",
+        }
+
+        self.store.save_csv(
+            "revenue.csv",
+            [revenue],
+            REVENUE_FIELDS,
+        )
+
+        fake_forecast = {
+            "status": "blocked",
+            "mode": "event_driven",
+            "warning": "Synthetic integration test only.",
+            "reasons": ["Synthetic test result."],
+            "folds": [],
+        }
+
+        with patch(
+            "genshin_research.web.forecast_event_driven",
+            return_value=fake_forecast,
+        ) as forecast_mock:
+            self.wait_job(
+                self.post(f"/datasets/{run_id}/forecast-event-driven")
+            )
+
+        forecast_mock.assert_called_once()
+
+        run_path = self.store.run_path(run_id)
+
+        # Pastikan semua hasil Event-Driven dibuat.
+        event_files = [
+            "event_monthly.csv",
+            "event_pairs.csv",
+            "event_coverage.csv",
+            "event_forecast.json",
+        ]
+
+        for filename in event_files:
+            self.assertTrue(
+                (run_path / filename).exists(),
+                f"{filename} seharusnya dibuat.",
+            )
+
+        # 31 Maret + 72 jam masuk April, lalu dipasangkan ke revenue Mei.
+        monthly = read_csv(run_path / "event_monthly.csv")
+        pairs = read_csv(run_path / "event_pairs.csv")
+
+        self.assertEqual([row["month"] for row in monthly], ["2026-04"])
+        self.assertEqual([row["revenue_month"] for row in pairs], ["2026-05"])
+        self.assertEqual(len(pairs), 1)
+
+        # Perubahan revenue harus menghapus seluruh hasil Event-Driven lama.
+        updated_revenue = {
+            **revenue,
+            "revenue_usd": "125",
+        }
+
+        response = self.post("/revenue", updated_revenue)
+        self.assertEqual(response.status_code, 302)
+
+        for filename in event_files:
+            self.assertFalse(
+                (run_path / filename).exists(),
+                f"{filename} seharusnya dihapus setelah revenue berubah.",
+            )
+

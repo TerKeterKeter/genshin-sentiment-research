@@ -22,7 +22,6 @@ from flask import (
 from .analysis import (
     REVENUE_FIELDS,
     aggregate,
-    aggregate_event_months,
     forecast,
     forecast_event_driven,
     pair_events,
@@ -31,6 +30,7 @@ from .analysis import (
     spearman,
     validate_revenue,
 )
+
 from .audit import STATUSES, audit
 from .collection import COMMENT_FIELDS, collect_event
 from .core import DataUseSettingsError, authorize, read_csv, read_json, utc
@@ -660,6 +660,10 @@ def create_app(data_dir="data/workbench"):
                     "pairs.csv",
                     "coverage.csv",
                     "scatter.png",
+                    "event_monthly.csv",
+                    "event_pairs.csv",
+                    "event_coverage.csv",
+                    "event_forecast.json",
                 ]:
                     (store.run_path(run["run_id"]) / filename).unlink(missing_ok=True)
             flash(
@@ -824,8 +828,9 @@ def create_app(data_dir="data/workbench"):
         )
 
         def work(progress):
-            progress("Mengagregasi sentimen berdasarkan bulan publikasi event...")
-
+            progress(
+                "Mengagregasi sentimen berdasarkan bulan berakhirnya jendela pengumpulan komentar..."
+            )
             event_monthly = aggregate(
                 rows_for_run(run_id, "events.csv"),
                 rows_for_run(run_id, "predictions.csv"),
